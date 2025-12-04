@@ -1,0 +1,11 @@
+{
+  "name": "agent-definition-language",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "ajv": "^8.0.0"
+  },
+  "scripts": {
+    "validate:example": "node tools/validate.js examples/creative_producer_agent.json"
+  }
+}

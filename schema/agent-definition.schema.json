@@ -1,0 +1,356 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/agent-definition.json",
+  "title": "Agent Definition",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this agent (UUID or similar)."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version number of this agent definition."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the agent."
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the agent\u2019s purpose and behavior."
+    },
+    "role": {
+      "type": "string",
+      "description": "Short role label for the agent (e.g., 'Creative Producer')."
+    },
+    "llm": {
+      "type": "string",
+      "description": "Identifier of the primary LLM provider or model family used by this agent (e.g., 'openai')."
+    },
+    "llm_settings": {
+      "type": "object",
+      "description": "Model configuration settings for the LLM.",
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sampling temperature for the LLM."
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens to generate in a single completion."
+        }
+      },
+      "required": [
+        "temperature",
+        "max_tokens"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "description": "Owner or namespace for this agent (e.g., 'admin')."
+    },
+    "document_index_id": {
+      "type": "string",
+      "description": "Primary RAG index identifier associated with this agent, if any."
+    },
+    "rag": {
+      "type": "array",
+      "description": "Associated RAG index configurations this agent can use.",
+      "items": {
+        "$ref": "#/$defs/RagIndex"
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "Tools that this agent can call during reasoning and execution.",
+      "items": {
+        "$ref": "#/$defs/ToolDefinition"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "role",
+    "llm",
+    "llm_settings",
+    "tools"
+  ],
+  "$defs": {
+    "RagIndex": {
+      "title": "RAG Index Definition",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique ID of the RAG index."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name for the RAG index."
+        },
+        "rag_type": {
+          "type": "string",
+          "description": "Type of RAG index (e.g., 'doc', 'code', 'image')."
+        },
+        "virtual_index_path": {
+          "type": "string",
+          "description": "Virtual path or logical mount point under which this index is exposed."
+        },
+        "location_type": {
+          "type": "string",
+          "description": "Location type, e.g., 'local', 's3', 'gcs', etc."
+        },
+        "remote_path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Optional remote path or bucket/key for the index."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Arbitrary metadata associated with this RAG index.",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "rag_type",
+        "virtual_index_path",
+        "location_type",
+        "metadata"
+      ]
+    },
+    "ToolDefinition": {
+      "title": "Tool Definition",
+      "type": "object",
+      "description": "A callable tool the agent can invoke. Supports both simple RAG tools and rich capability-style tools.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Optional unique identifier for the tool (e.g., UUID)."
+        },
+        "tool_id": {
+          "type": "string",
+          "description": "Optional external or catalog ID for this tool."
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional version number of the tool definition."
+        },
+        "name": {
+          "type": "string",
+          "description": "Code-readable tool name used for invocation."
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-friendly display name for UI surfaces."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of what this tool does and how the agent should use it."
+        },
+        "category": {
+          "type": "string",
+          "description": "Optional category for organizing tools (e.g., 'File Operations', 'RAG', 'Image Generation')."
+        },
+        "parameters": {
+          "type": "array",
+          "description": "List of parameters this tool accepts.",
+          "items": {
+            "$ref": "#/$defs/ToolParameter"
+          }
+        },
+        "returns": {
+          "type": "object",
+          "description": "Optional schema for the tool\u2019s return value.",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "High-level return type description (e.g., 'object', 'string')."
+            },
+            "description": {
+              "type": "string",
+              "description": "Human-readable explanation of the return value."
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "Optional list of runtime dependencies (e.g., pip packages with optional pinned versions).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keys_schema": {
+          "type": "array",
+          "description": "Optional key / credential schema, typically for environment variables.",
+          "items": {
+            "$ref": "#/$defs/KeySchemaItem"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "description": "Optional list of source references for this tool (e.g., repos, docs).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "permissions": {
+          "type": "object",
+          "description": "Optional sandbox permissions for this tool.",
+          "additionalProperties": false,
+          "properties": {
+            "network": {
+              "type": "boolean",
+              "description": "Whether outbound network access is allowed."
+            },
+            "file_read": {
+              "type": "array",
+              "description": "List of directories or paths this tool may read from.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "file_write": {
+              "type": "array",
+              "description": "List of directories or paths this tool may write to.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "env_vars": {
+              "type": "array",
+              "description": "List of environment variable names this tool may access.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "visibility": {
+          "type": "string",
+          "description": "Visibility of this tool, e.g., 'public', 'private'."
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of this tool, e.g., 'active', 'deprecated'."
+        },
+        "code_file": {
+          "type": "string",
+          "description": "Relative path to the Python file implementing this tool."
+        },
+        "created_by": {
+          "type": "string",
+          "description": "User or system that created this tool definition."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 timestamp of when this tool was created."
+        },
+        "invocation": {
+          "type": "object",
+          "description": "Invocation configuration for this tool (how the agent should call it).",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Invocation type (e.g., 'python_function', 'http_endpoint')."
+            },
+            "function": {
+              "type": "string",
+              "description": "Optional function name or entrypoint when type is 'python_function'."
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "parameters"
+      ]
+    },
+    "ToolParameter": {
+      "title": "Tool Parameter",
+      "type": "object",
+      "description": "Definition of a single parameter accepted by a tool.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Parameter name as used in the tool\u2019s function signature or input schema."
+        },
+        "type": {
+          "type": "string",
+          "description": "Logical type of the parameter (e.g., 'string', 'number', 'boolean', 'object')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of the parameter."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this parameter is required.",
+          "default": false
+        },
+        "default": {
+          "description": "Optional default value if the parameter is omitted.",
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "object",
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "description"
+      ]
+    },
+    "KeySchemaItem": {
+      "title": "Key Schema Item",
+      "type": "object",
+      "description": "Definition of a required key (typically for environment-based configuration).",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the key or environment variable."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what this key is used for."
+        },
+        "key_type": {
+          "type": "string",
+          "description": "Type of key, e.g., 'environment_variable', 'api_key', etc."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "key_type"
+      ]
+    }
+  }
+}

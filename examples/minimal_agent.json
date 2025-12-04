@@ -1,0 +1,32 @@
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "version": 1,
+  "name": "hello_world_agent",
+  "description": "Minimal agent that calls a single echo tool.",
+  "role": "Demo",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.2,
+    "max_tokens": 512
+  },
+  "owner": "demo",
+  "rag": [],
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Echo a string back to the caller.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text to echo.",
+          "required": true
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "echo"
+      }
+    }
+  ]
+}
