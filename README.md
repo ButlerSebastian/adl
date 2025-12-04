@@ -2,14 +2,9 @@
 
 ADL (Agent Definition Language) is a vendor-neutral, declarative standard for defining AI agents, their tools, RAG inputs, LLM settings, permissions, and dependencies. It is designed for enterprise-grade governance, interoperability, and democratized agent development across verticals.
 
-## Badges
-
 <p align="center">
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="Apache 2.0 License"/>
   <img src="https://img.shields.io/badge/schema-validated-brightgreen" alt="Schema Validated"/>
-  <img src="https://img.shields.io/github/last-commit/nextmoca/adl" alt="Last Commit"/>
-  <img src="https://img.shields.io/github/contributors/nextmoca/adl" alt="Contributors"/>
-  <img src="https://img.shields.io/github/repo-size/nextmoca/adl" alt="Repo Size"/>
 </p>
 
 ---
