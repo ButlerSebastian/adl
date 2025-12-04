@@ -4,8 +4,6 @@
     <img src="https://img.shields.io/badge/ADL-GitHub-black?logo=github" alt="GitHub Repo"/>
   </a>
   <img src="https://img.shields.io/badge/Schema-Validated-brightgreen" alt="Schema Status"/>
-  <img src="https://img.shields.io/github/last-commit/nextmoca/adl" alt="Last Commit"/>
-  <img src="https://img.shields.io/github/contributors/nextmoca/adl" alt="Contributors"/>
 </p>
 
 <h1 align="center">ADL — Agent Definition Language</h1>
@@ -85,7 +83,7 @@ To avoid confusion, ADL explicitly does **not** define:
 ---
 
 ## 🔍 ADL vs AI App Definition  
-**ADL is an Agent Definition Language — not a general AI App definition format.**
+**ADL is an Agent Definition Language - not a general AI App definition format.**
 
 AI apps are broad and may include UI, API layers, deployments, data stores, or business logic.
 
