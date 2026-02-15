@@ -55,6 +55,9 @@ ADL defines:
 - **Identity** — name, description, role, owner, version
 - **LLM Settings** — provider, model, temperature, max tokens
 - **Tools & Actions** — typed parameters, descriptions, return schemas
+- **Tool Categories** — hierarchical taxonomy with pattern validation
+- **Parameter Constraints** — enhanced type system with validation
+- **Return Types** — standardized return schemas with 15 patterns
 - **RAG Inputs** — indices, types, metadata, paths
 - **Memory** — type, scope, backend, retention, policies, privacy settings
 - **Permissions** — file I/O, network, env vars
@@ -147,6 +150,23 @@ Open sourcing ensures ADL becomes a **true standard**, not a proprietary configu
 - 📐 Roadmap — `/ROADMAP.md`  
 - 🏛 Governance — `/GOVERNANCE.md`  
 - 🤝 Contributing — `/CONTRIBUTING.md`  
+- 📖 Tool Category Taxonomy — `/docs/tool-category-taxonomy.md`  
+- 📖 Enhanced Type System — `/docs/enhanced-type-system.md`  
+- 📖 Return Type System — `/docs/return-type-system.md`  
+- 📖 Schema Reference — `/docs/schema-reference.md`  
+- 📖 Migration Guide v1.5 — `/docs/migration-v1.5.md`
+
+---
+
+## ✨ What's New in v1.5
+
+ADL v1.5 introduces three major enhancements:
+
+- **Tool Category Taxonomy**: A hierarchical taxonomy for tools with pattern validation, ensuring consistency and interoperability across agents.
+- **Enhanced Type System**: Advanced parameter constraints with validation, enabling stricter and more expressive type definitions.
+- **Return Type System**: Standardized return schemas with 15 predefined patterns, improving predictability and usability.
+
+For detailed migration instructions and examples, refer to the [Migration Guide v1.5](/docs/migration-v1.5.md).
 
 ---
 
@@ -189,14 +209,23 @@ node tools/validate.js examples/minimal_agent.json
     {
       "name": "generate_campaign_image",
       "description": "Generate a high-quality image from a prompt.",
+      "category": "ai_ml.image_generation.text_to_image",
+      "subcategory": "dalle",
       "parameters": [
         {
           "name": "prompt",
           "type": "string",
           "description": "Image prompt",
+          "minLength": 1,
+          "maxLength": 2000,
           "required": true
         }
       ],
+      "returns": {
+        "type": "MediaResult",
+        "schema": { "$ref": "#/$defs/StandardReturnTypes/MediaResult" },
+        "description": "Returns generated image with metadata"
+      },
       "invocation": { "type": "python_function" }
     }
   ],

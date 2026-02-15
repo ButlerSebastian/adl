@@ -51,11 +51,14 @@
     {
       "name": "search_documents",
       "description": "Search for documents across all available indices.",
+      "category": "data_access.search.query",
+      "subcategory": "full_text",
       "parameters": [
         {
           "name": "query",
           "type": "string",
           "description": "Search query.",
+          "minLength": 1,
           "required": true
         },
         {
@@ -68,6 +71,7 @@
           "name": "limit",
           "type": "number",
           "description": "Maximum number of results to return.",
+          "minimum": 1,
           "required": false,
           "default": 10
         }
@@ -75,11 +79,53 @@
       "invocation": {
         "type": "python_function",
         "function": "search_documents"
+      },
+      "returns": {
+        "type": "ListResult",
+        "schema": {
+          "$ref": "#/$defs/StandardReturnTypes/ListResult"
+        },
+        "description": "Returns paginated list of documents",
+        "examples": [
+          {
+            "success": true,
+            "data": [
+              {
+                "id": "doc_001",
+                "title": "Research Paper on AI",
+                "content": "Abstract of the research paper...",
+                "metadata": {
+                  "author": "Dr. Smith",
+                  "date": "2026-01-15"
+                }
+              },
+              {
+                "id": "doc_002",
+                "title": "Study on Machine Learning",
+                "content": "Summary of the study...",
+                "metadata": {
+                  "author": "Dr. Johnson",
+                  "date": "2026-01-20"
+                }
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "per_page": 10,
+              "total": 45,
+              "total_pages": 5,
+              "has_next": true,
+              "has_prev": false
+            }
+          }
+        ]
       }
     },
     {
       "name": "summarize_documents",
       "description": "Generate a comprehensive summary of multiple documents.",
+      "category": "ai_ml.text.summarization",
+      "subcategory": "extractive",
       "parameters": [
         {
           "name": "document_ids",
@@ -91,6 +137,11 @@
           "name": "summary_type",
           "type": "string",
           "description": "Type of summary: 'brief', 'detailed', or 'executive'.",
+          "enum": [
+            "brief",
+            "detailed",
+            "executive"
+          ],
           "required": false,
           "default": "detailed"
         }
@@ -98,6 +149,19 @@
       "invocation": {
         "type": "python_function",
         "function": "summarize_documents"
+      },
+      "returns": {
+        "type": "StringValue",
+        "schema": {
+          "$ref": "#/$defs/StandardReturnTypes/StringValue"
+        },
+        "description": "Returns generated summary",
+        "examples": [
+          {
+            "success": true,
+            "value": "This research paper examines the impact of AI on modern healthcare systems. The study finds that AI-powered diagnostic tools have improved accuracy by 25% and reduced patient wait times by 40%. Key recommendations include increased investment in AI infrastructure and training for healthcare professionals."
+          }
+        ]
       }
     }
   ],

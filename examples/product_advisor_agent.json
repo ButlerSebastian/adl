@@ -38,48 +38,119 @@
     }
   ],
   "tools": [
-    {
-      "name": "search_products",
-      "description": "Search for products matching given criteria.",
-      "parameters": [
-        {
-          "name": "query",
-          "type": "string",
-          "description": "Search query for products.",
-          "required": true
-        },
-        {
-          "name": "category",
-          "type": "string",
-          "description": "Product category filter.",
-          "required": false
-        },
-        {
-          "name": "price_range",
-          "type": "string",
-          "description": "Price range filter (e.g., '0-100', '100-500').",
-          "required": false
-        }
+{
+      "name":"search_products",
+      "description":"Search for products matching given criteria.",
+      "category":"data_access.search.query",
+      "subcategory":"full_text",
+      "parameters":[
+         {
+           "name":"query",
+           "type":"string",
+           "minLength":1,
+           "maxLength":500,
+           "description":"Search query for products.",
+           "required":true
+         },
+         {
+           "name":"category",
+           "type":"string",
+           "description":"Product category filter.",
+           "required":false
+         },
+         {
+           "name":"price_range",
+           "type":"string",
+           "pattern":"^[0-9]+-[0-9]+$",
+           "description":"Price range filter (e.g., '0-100', '100-500').",
+           "required":false
+         }
       ],
-      "invocation": {
-        "type": "python_function",
-        "function": "search_products"
+      "invocation":{
+         "type":"python_function",
+         "function":"search_products"
+      },
+      "returns":{
+         "type":"ListResult",
+         "schema":{"$ref":"#/$defs/StandardReturnTypes/ListResult"},
+         "description":"Returns paginated list of products",
+         "examples":[
+            {
+               "success":true,
+               "data":[
+                  {
+                     "id":"prod_001",
+                     "name":"Wireless Headphones",
+                     "price":99.99,
+                     "category":"electronics",
+                     "in_stock":true
+                  },
+                  {
+                     "id":"prod_002",
+                     "name":"Smart Watch",
+                     "price":199.99,
+                     "category":"electronics",
+                     "in_stock":true
+                  }
+               ],
+               "pagination":{
+                  "page":1,
+                  "per_page":10,
+                  "total":45,
+                  "total_pages":5,
+                  "has_next":true,
+                  "has_prev":false
+               }
+            }
+         ]
       }
     },
-    {
-      "name": "get_product_details",
-      "description": "Get detailed information about a specific product.",
-      "parameters": [
-        {
-          "name": "product_id",
-          "type": "string",
-          "description": "The product ID.",
-          "required": true
-        }
+{
+      "name":"get_product_details",
+      "description":"Get detailed information about a specific product.",
+      "parameters":[
+         {
+           "name":"product_id",
+           "type":"string",
+           "description":"The product ID.",
+           "required":true
+         }
       ],
-      "invocation": {
-        "type": "python_function",
-        "function": "get_product_details"
+      "invocation":{
+         "type":"python_function",
+         "function":"get_product_details"
+      },
+      "returns":{
+         "type":"EntityResult",
+         "schema":{"$ref":"#/$defs/StandardReturnTypes/EntityResult"},
+         "description":"Returns product entity with details",
+         "examples":[
+            {
+               "id":"prod_98765",
+               "type":"product",
+               "attributes":{
+                  "name":"Wireless Headphones",
+                  "price":99.99,
+                  "category":"electronics",
+                  "in_stock":true,
+                  "description":"High-quality wireless headphones with noise cancellation",
+                  "manufacturer":"AudioTech Inc.",
+                  "sku":"WH-2026-001"
+               },
+               "relationships":{
+                  "manufacturer":{
+                     "data":{
+                        "id":"mfg_123",
+                        "type":"manufacturer"
+                     }
+                  }
+               },
+               "meta":{
+                  "created_at":"2026-01-15T08:00:00Z",
+                  "updated_at":"2026-02-10T14:30:00Z"
+               }
+            }
+         ]
       }
     }
   ],

@@ -57,16 +57,40 @@ This document summarizes the main fields from `schema/agent-definition.schema.js
 - `name` (string, **required**): Code-facing name, used in invocation.
 - `display_name` (string, optional): Human-friendly UI label.
 - `description` (string, **required**): Rich description of what the tool does.
-- `category` (string, optional): Category (e.g., "File Operations", "RAG").
+- `category` (string, optional): Optional hierarchical category ID following taxonomy specification (e.g., 'data_access.database.query', 'ai_ml.image_generation.text_to_image'). Pattern: `^[a-z_]+(?:\.[a-z_]+){1,3}$`
+- `subcategory` (string, optional): Optional subcategory for specific implementation (e.g., 'sql', 'dalle', 'postgresql'). Pattern: `^[a-z0-9_-]+$`
 - `parameters` (array of `ToolParameter`, **required**):
   - `name` (string, **required**)
   - `type` (string, **required**)
   - `description` (string, **required**)
   - `required` (boolean, optional, default false)
   - `default` (any, optional)
-- `returns` (object, optional):
-  - `type` (string, optional)
-  - `description` (string, optional)
+  - `format` (string, optional): String format validation (email, uri, uuid, date-time, ipv4, ipv6)
+  - `pattern` (string, optional): Regex pattern for string validation
+  - `minLength` (integer, optional): Minimum string length
+  - `maxLength` (integer, optional): Maximum string length
+  - `minimum` (number, optional): Minimum numeric value
+  - `maximum` (number, optional): Maximum numeric value
+  - `exclusiveMinimum` (number, optional): Exclusive minimum bound
+  - `exclusiveMaximum` (number, optional): Exclusive maximum bound
+  - `multipleOf` (number, optional): Value must be multiple of this number
+  - `enum` (array, optional): Allowed values
+  - `items` (object, optional): Schema for array items
+  - `minItems` (integer, optional): Minimum array length
+  - `maxItems` (integer, optional): Maximum array length
+  - `uniqueItems` (boolean, optional): Array items must be unique
+  - `properties` (object, optional): Object property schemas
+  - `required_properties` (array of string, optional): Required object properties
+  - `additionalProperties` (boolean, optional): Allow extra properties in objects
+  - `anyOf` (array, optional): Schema must match at least one
+  - `oneOf` (array, optional): Schema must match exactly one
+  - `allOf` (array, optional): Schema must match all
+- `returns` (object, optional): Standardized return type schema
+  - `type` (string, **required**): Return type category. Values: ObjectResult, EntityResult, OperationStatus, StringValue, NumberValue, BooleanValue, IdentifierValue, ListResult, BatchResult, FileResult, MediaResult, EventStream, ChunkedData, VoidResult, Custom
+  - `schema` (object or string, **required**): JSON Schema or URI reference to schema definition
+  - `description` (string, optional): Human-readable description of the return value
+  - `examples` (array, optional): Example return values
+  - `content_type` (string, optional): MIME type of the return value (default: application/json)
 - `dependencies` (array of string, optional): e.g., pip packages.
 - `keys_schema` (array of `KeySchemaItem`, optional):
   - `name` (string, **required**)
@@ -86,6 +110,16 @@ This document summarizes the main fields from `schema/agent-definition.schema.js
 - `invocation` (object, required):
   - `type` (string, **required**): e.g., `python_function`.
   - `function` (string, optional): Name of the function to call.
+
+## v1.5 New Features
+
+This version introduces three major enhancements to the ADL specification:
+
+1. **Tool Category Taxonomy**: Hierarchical categorization system for tools with pattern validation. See [Tool Category Taxonomy](tool-category-taxonomy.md).
+
+2. **Enhanced Type System**: Comprehensive parameter constraints including string formats, numeric ranges, array constraints, and object schemas. See [Enhanced Type System](enhanced-type-system.md).
+
+3. **Return Type System**: Standardized return type schemas with 15 predefined categories and structured error handling. See [Return Type System](return-type-system.md).
 
 ## Versioning Guidelines (Summary)
 

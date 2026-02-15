@@ -27,45 +27,86 @@
   "owner": "support-team",
   "rag": [],
   "tools": [
-    {
-      "name": "lookup_order",
-      "description": "Look up customer order details by order ID.",
-      "parameters": [
-        {
-          "name": "order_id",
-          "type": "string",
-          "description": "The order ID to look up.",
-          "required": true
-        }
+{
+      "name":"lookup_order",
+      "description":"Look up customer order details by order ID.",
+      "category":"data_access.database.query",
+      "subcategory":"sql",
+      "parameters":[
+         {
+           "name":"order_id",
+           "type":"string",
+           "pattern":"^ORD-[0-9]+$",
+           "description":"The order ID to look up.",
+           "required":true
+         }
       ],
-      "invocation": {
-        "type": "python_function",
-        "function": "lookup_order"
+      "invocation":{
+         "type":"python_function",
+         "function":"lookup_order"
+      },
+      "returns":{
+         "type":"EntityResult",
+         "schema":{"$ref":"#/$defs/StandardReturnTypes/EntityResult"},
+         "description":"Returns order entity with details",
+         "examples":[
+            {
+               "id":"ord_12345",
+               "type":"order",
+               "attributes":{
+                  "order_number":"ORD-12345",
+                  "customer_id":"usr_67890",
+                  "status":"pending",
+                  "total":99.99,
+                  "created_at":"2026-02-15T10:30:00Z"
+               },
+               "relationships":{
+                  "customer":{
+                     "data":{
+                        "id":"usr_67890",
+                        "type":"customer"
+                     }
+                  }
+               }
+            }
+         ]
       }
     },
-    {
-      "name": "update_ticket_status",
-      "description": "Update the status of a support ticket.",
-      "parameters": [
-        {
-          "name": "ticket_id",
-          "type": "string",
-          "description": "The ticket ID to update.",
-          "required": true
-        },
-        {
-          "name": "status",
-          "type": "string",
-          "description": "The new status (e.g., 'open', 'in_progress', 'resolved').",
-          "required": true
-        }
+{
+      "name":"update_ticket_status",
+      "description":"Update the status of a support ticket.",
+      "parameters":[
+         {
+           "name":"ticket_id",
+           "type":"string",
+           "description":"The ticket ID to update.",
+           "required":true
+         },
+         {
+           "name":"status",
+           "type":"string",
+           "enum":["open","in_progress","resolved","closed"],
+           "description":"The new status (e.g., 'open', 'in_progress', 'resolved').",
+           "required":true
+         }
       ],
-      "invocation": {
-        "type": "python_function",
-        "function": "update_ticket_status"
+      "invocation":{
+         "type":"python_function",
+         "function":"update_ticket_status"
+      },
+      "returns":{
+         "type":"VoidResult",
+         "schema":{"$ref":"#/$defs/StandardReturnTypes/VoidResult"},
+         "description":"Returns operation status",
+         "examples":[
+            {
+               "success":true,
+               "message":"Ticket status updated successfully"
+            }
+         ]
       }
-    }
-  ],
+}
+   ],
   "memory": {
     "type": "episodic",
     "scope": "user",

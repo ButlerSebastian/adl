@@ -15,17 +15,33 @@
     {
       "name": "echo",
       "description": "Echo a string back to the caller.",
+      "category": "utility.text.echo",
+      "subcategory": "simple",
       "parameters": [
         {
           "name": "text",
           "type": "string",
           "description": "Text to echo.",
+          "minLength": 1,
           "required": true
         }
       ],
       "invocation": {
         "type": "python_function",
         "function": "echo"
+      },
+      "returns": {
+        "type": "StringValue",
+        "schema": {
+          "$ref": "#/$defs/StandardReturnTypes/StringValue"
+        },
+        "description": "Returns echoed text",
+        "examples": [
+          {
+            "success": true,
+            "value": "Hello World"
+          }
+        ]
       }
     }
   ]

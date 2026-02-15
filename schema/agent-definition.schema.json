@@ -279,7 +279,13 @@
         },
         "category": {
           "type": "string",
-          "description": "Optional category for organizing tools (e.g., 'File Operations', 'RAG', 'Image Generation')."
+          "description": "Optional hierarchical category ID following taxonomy specification (e.g., 'data_access.database.query', 'ai_ml.image_generation.text_to_image').",
+          "pattern": "^[a-z_]+(?:\\.[a-z_]+){1,3}$"
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Optional subcategory for specific implementation (e.g., 'sql', 'dalle', 'postgresql').",
+          "pattern": "^[a-z0-9_-]+$"
         },
         "parameters": {
           "type": "array",
@@ -288,20 +294,55 @@
             "$ref": "#/$defs/ToolParameter"
           }
         },
-        "returns": {
+"returns": {
           "type": "object",
-          "description": "Optional schema for the tool\u2019s return value.",
-          "additionalProperties": true,
+          "description": "Optional schema for the tool's return value.",
+          "additionalProperties": false,
           "properties": {
             "type": {
               "type": "string",
-              "description": "High-level return type description (e.g., 'object', 'string')."
+              "description": "Return type category",
+              "enum": [
+                "ObjectResult",
+                "EntityResult",
+                "OperationStatus",
+                "StringValue",
+                "NumberValue",
+                "BooleanValue",
+                "IdentifierValue",
+                "ListResult",
+                "BatchResult",
+                "FileResult",
+                "MediaResult",
+                "EventStream",
+                "ChunkedData",
+                "VoidResult",
+                "Custom"
+              ]
+            },
+            "schema": {
+              "oneOf": [
+                { "type": "object" },
+                { "type": "string", "format": "uri" }
+              ],
+              "description": "JSON Schema or reference to schema definition"
             },
             "description": {
               "type": "string",
-              "description": "Human-readable explanation of the return value."
+              "description": "Human-readable description of the return value"
+            },
+            "examples": {
+              "type": "array",
+              "description": "Example return values",
+              "items": {}
+            },
+            "content_type": {
+              "type": "string",
+              "description": "MIME type of the return value",
+              "default": "application/json"
             }
-          }
+          },
+          "required": ["type", "schema"]
         },
         "dependencies": {
           "type": "array",
@@ -405,7 +446,7 @@
     "ToolParameter": {
       "title": "Tool Parameter",
       "type": "object",
-      "description": "Definition of a single parameter accepted by a tool.",
+      "description": "Definition of a single parameter accepted by a tool, with enhanced type constraints for validation (see enhanced-type-system.md).",
       "additionalProperties": false,
       "properties": {
         "name": {
@@ -435,6 +476,93 @@
             "array",
             "null"
           ]
+        },
+        "format": {
+          "type": "string",
+          "description": "String format validation (e.g., 'email', 'uri', 'uuid', 'date-time', 'ipv4', 'ipv6')."
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern for string validation (ECMA-262)."
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum string length."
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum string length."
+        },
+        "minimum": {
+          "type": "number",
+          "description": "Minimum numeric value (inclusive)."
+        },
+        "maximum": {
+          "type": "number",
+          "description": "Maximum numeric value (inclusive)."
+        },
+        "exclusiveMinimum": {
+          "type": "number",
+          "description": "Minimum numeric value (exclusive)."
+        },
+        "exclusiveMaximum": {
+          "type": "number",
+          "description": "Maximum numeric value (exclusive)."
+        },
+        "multipleOf": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Value must be multiple of this number."
+        },
+        "enum": {
+          "type": "array",
+          "description": "Allowed values for the parameter."
+        },
+        "items": {
+          "description": "Schema for array items (when type is 'array')."
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum array length."
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum array length."
+        },
+        "uniqueItems": {
+          "type": "boolean",
+          "default": false,
+          "description": "Array items must be unique."
+        },
+        "properties": {
+          "type": "object",
+          "description": "Object property schemas (when type is 'object')."
+        },
+        "required_properties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Required object properties."
+        },
+        "additionalProperties": {
+          "description": "Allow additional object properties (boolean or schema)."
+        },
+        "anyOf": {
+          "type": "array",
+          "description": "Union type schemas (value matches any)."
+        },
+        "oneOf": {
+          "type": "array",
+          "description": "Exclusive type schemas (value matches exactly one)."
+        },
+        "allOf": {
+          "type": "array",
+          "description": "Intersection type schemas (value matches all)."
         }
       },
       "required": [

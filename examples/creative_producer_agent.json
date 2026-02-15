@@ -29,20 +29,23 @@
          "name":"generate_image_using_gemini",
          "display_name":"generate_image_using_gemini",
          "description":"Generate a single image from a text prompt using the google-genai SDK with the gemini-3-pro-image-preview model, saving the image file into /home/images directory and returning its absolute path.",
-         "parameters":[
-            {
-               "name":"prompt",
-               "type":"string",
-               "default":null,
-               "description":"The exact text prompt to send to the Gemini image generation model. This string must be passed through to the API without modification."
-            },
-            {
-               "name":"output_filename",
-               "type":"string",
-               "default":null,
-               "description":"Optional filename for the generated image (e.g. 'my_image.png'). If omitted or empty, a unique filename (e.g. with timestamp or UUID) must be generated. The file must be created under the NM_OUTPUT_DIR directory."
-            }
-         ],
+"parameters":[
+             {
+                "name":"prompt",
+                "type":"string",
+                "default":null,
+                "minLength":1,
+                "maxLength":2000,
+                "description":"The exact text prompt to send to the Gemini image generation model. This string must be passed through to the API without modification."
+             },
+             {
+                "name":"output_filename",
+                "type":"string",
+                "default":null,
+                "pattern":"^[a-zA-Z0-9_-]+\\.png$",
+                "description":"Optional filename for the generated image (e.g. 'my_image.png'). If omitted or empty, a unique filename (e.g. with timestamp or UUID) must be generated. The file must be created under the NM_OUTPUT_DIR directory."
+             }
+          ],
          "keys_schema":[
             {
                "name":"NM_GEMINI_API_KEY",
@@ -57,7 +60,29 @@
          "dependencies":[
             "google-genai"
          ],
-         "category":"Image Generation"
-      }
+"category":"ai_ml.image_generation.text_to_image",
+           "subcategory":"dalle",
+           "returns":{
+              "type":"MediaResult",
+              "schema":{"$ref":"#/$defs/StandardReturnTypes/MediaResult"},
+              "description":"Returns generated image with metadata",
+              "examples":[
+                 {
+                    "success":true,
+                    "media":{
+                       "type":"image",
+                       "url":"https://cdn.example.com/images/generated_123.png",
+                       "format":"png",
+                       "dimensions":{
+                          "width":1024,
+                          "height":1024
+                       },
+                       "size":524288,
+                       "alt_text":"Generated marketing image for summer campaign"
+                    }
+                 }
+              ]
+           }
+       }
    ]
 }
