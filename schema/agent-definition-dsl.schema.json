@@ -1,0 +1,1231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/agent-definition.json",
+  "title": "AgentDefinition",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer"
+    },
+    "version_string": {
+      "type": "string"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": [
+        "stable",
+        "beta",
+        "deprecated",
+        "experimental"
+      ]
+    },
+    "compatibility": {
+      "$ref": "#/$defs/Compatibility"
+    },
+    "change_log": {
+      "$ref": "#/$defs/ChangeLog"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "llm": {
+      "type": "string"
+    },
+    "llm_settings": {
+      "$ref": "#/$defs/LlmSettings"
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ToolDefinition"
+      }
+    },
+    "rag": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RagIndex"
+      }
+    },
+    "memory": {
+      "$ref": "#/$defs/MemoryDefinition"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "document_index_id": {
+      "type": "string"
+    },
+    "agent_roles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AgentRole"
+      }
+    },
+    "execution_constraints": {
+      "$ref": "#/$defs/ExecutionConstraints"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EventDefinition"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "name",
+    "description",
+    "role",
+    "llm",
+    "llm_settings",
+    "tools",
+    "rag"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Compatibility": {
+      "type": "object",
+      "properties": {
+        "adl_spec": {
+          "type": "string"
+        },
+        "previous_versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "ChangeLog": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "breaking",
+            "non-breaking",
+            "patch"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "SpecializedModel": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "task_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "model",
+        "task_types",
+        "priority"
+      ],
+      "additionalProperties": false
+    },
+    "ModelRouting": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "primary_model": {
+          "type": "string"
+        },
+        "fallback_models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "specialized_models": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SpecializedModel"
+          }
+        },
+        "routing_strategy": {
+          "type": "string",
+          "enum": [
+            "round_robin",
+            "least_loaded",
+            "priority_based",
+            "task_based"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "primary_model",
+        "fallback_models",
+        "specialized_models",
+        "routing_strategy"
+      ],
+      "additionalProperties": false
+    },
+    "ModelConstraints": {
+      "type": "object",
+      "properties": {
+        "max_tokens_per_request": {
+          "type": "integer"
+        },
+        "max_requests_per_minute": {
+          "type": "integer"
+        },
+        "cost_limit_per_hour": {
+          "type": "number"
+        },
+        "timeout_seconds": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_tokens_per_request",
+        "max_requests_per_minute",
+        "cost_limit_per_hour",
+        "timeout_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "LlmSettings": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number"
+        },
+        "max_tokens": {
+          "type": "integer"
+        },
+        "model_routing": {
+          "$ref": "#/$defs/ModelRouting"
+        },
+        "model_constraints": {
+          "$ref": "#/$defs/ModelConstraints"
+        }
+      },
+      "required": [
+        "temperature",
+        "max_tokens"
+      ],
+      "additionalProperties": false
+    },
+    "ToolParameter": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "default": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "object",
+            "array",
+            "null"
+          ]
+        },
+        "enum": {
+          "type": "array",
+          "items": {}
+        },
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "exclusiveMinimum": {
+          "type": "number"
+        },
+        "exclusiveMaximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "integer"
+        },
+        "maxLength": {
+          "type": "integer"
+        },
+        "minItems": {
+          "type": "integer"
+        },
+        "maxItems": {
+          "type": "integer"
+        },
+        "multipleOf": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "required_properties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "uniqueItems": {
+          "type": "boolean"
+        },
+        "oneOf": {
+          "type": "array",
+          "items": {}
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {}
+        },
+        "allOf": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "description",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "ToolReturnSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "schema": {
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "examples": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "schema"
+      ],
+      "additionalProperties": false
+    },
+    "ToolInvocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "function": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "KeySchemaItem": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "key_type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "key_type",
+        "description"
+      ],
+      "additionalProperties": false
+    },
+    "ToolPermissions": {
+      "type": "object",
+      "properties": {
+        "file_read": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "file_write": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network": {
+          "type": "boolean"
+        },
+        "env_vars": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "file_read",
+        "file_write",
+        "network",
+        "env_vars"
+      ],
+      "additionalProperties": false
+    },
+    "ToolDefinition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tool_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "subcategory": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ToolParameter"
+          }
+        },
+        "returns": {
+          "$ref": "#/$defs/ToolReturnSchema"
+        },
+        "invocation": {
+          "$ref": "#/$defs/ToolInvocation"
+        },
+        "keys_schema": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/KeySchemaItem"
+          }
+        },
+        "permissions": {
+          "$ref": "#/$defs/ToolPermissions"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "code_file": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "parameters"
+      ],
+      "additionalProperties": false
+    },
+    "HierarchicalLevel": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_size": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "overlap": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parent_index": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "chunk_size",
+        "overlap"
+      ],
+      "additionalProperties": false
+    },
+    "HierarchicalConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "levels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/HierarchicalLevel"
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "levels"
+      ],
+      "additionalProperties": false
+    },
+    "VectorSearchConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "top_k": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "similarity_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "top_k",
+        "similarity_threshold"
+      ],
+      "additionalProperties": false
+    },
+    "KeywordSearchConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "top_k": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bm25_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "top_k",
+        "bm25_weight"
+      ],
+      "additionalProperties": false
+    },
+    "SearchConfig": {
+      "type": "object",
+      "properties": {
+        "vector_search": {
+          "$ref": "#/$defs/VectorSearchConfig"
+        },
+        "keyword_search": {
+          "$ref": "#/$defs/KeywordSearchConfig"
+        },
+        "hybrid_strategy": {
+          "type": "string",
+          "enum": [
+            "weighted",
+            "reciprocal_rank_fusion",
+            "rrf"
+          ]
+        },
+        "fusion_weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "CrossFileReferences": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "reference_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "reference_types",
+        "max_depth"
+      ],
+      "additionalProperties": false
+    },
+    "RagIndex": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rag_type": {
+          "type": "string"
+        },
+        "virtual_index_path": {
+          "type": "string"
+        },
+        "location_type": {
+          "type": "string"
+        },
+        "remote_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "hierarchical_config": {
+          "$ref": "#/$defs/HierarchicalConfig"
+        },
+        "search_config": {
+          "$ref": "#/$defs/SearchConfig"
+        },
+        "cross_file_references": {
+          "$ref": "#/$defs/CrossFileReferences"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "rag_type",
+        "virtual_index_path",
+        "location_type",
+        "metadata"
+      ],
+      "additionalProperties": false
+    },
+    "RetentionPolicyConfig": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy"
+      ],
+      "additionalProperties": false
+    },
+    "PrivacySettings": {
+      "type": "object",
+      "properties": {
+        "pii": {
+          "type": "boolean"
+        },
+        "encryption": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pii",
+        "encryption"
+      ],
+      "additionalProperties": false
+    },
+    "LifecycleManagement": {
+      "type": "object",
+      "properties": {
+        "auto_cleanup": {
+          "type": "boolean"
+        },
+        "cleanup_interval_hours": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_entries": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "auto_cleanup",
+        "cleanup_interval_hours",
+        "max_entries"
+      ],
+      "additionalProperties": false
+    },
+    "EvictionPolicyConfig": {
+      "type": "object",
+      "properties": {
+        "policy": {
+          "type": "string",
+          "enum": [
+            "lru",
+            "lfu",
+            "fifo",
+            "random"
+          ]
+        },
+        "threshold_percentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "preserve_recent": {
+          "type": "boolean"
+        },
+        "preserve_important": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "policy",
+        "threshold_percentage",
+        "preserve_recent",
+        "preserve_important"
+      ],
+      "additionalProperties": false
+    },
+    "StorageStrategy": {
+      "type": "object",
+      "properties": {
+        "compression": {
+          "type": "boolean"
+        },
+        "indexing": {
+          "type": "boolean"
+        },
+        "caching": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "compression",
+        "indexing",
+        "caching"
+      ],
+      "additionalProperties": false
+    },
+    "MemoryDefinition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "episodic",
+            "semantic",
+            "working",
+            "hybrid"
+          ]
+        },
+        "scope": {
+          "type": "string"
+        },
+        "backend": {
+          "type": "string"
+        },
+        "retention": {
+          "$ref": "#/$defs/RetentionPolicyConfig"
+        },
+        "write_policy": {
+          "type": "string"
+        },
+        "read_policy": {
+          "type": "string"
+        },
+        "privacy": {
+          "$ref": "#/$defs/PrivacySettings"
+        },
+        "lifecycle_management": {
+          "$ref": "#/$defs/LifecycleManagement"
+        },
+        "eviction_policy": {
+          "$ref": "#/$defs/EvictionPolicyConfig"
+        },
+        "storage_strategy": {
+          "$ref": "#/$defs/StorageStrategy"
+        }
+      },
+      "required": [
+        "type",
+        "scope",
+        "backend",
+        "retention",
+        "write_policy",
+        "read_policy",
+        "privacy"
+      ],
+      "additionalProperties": false
+    },
+    "RoleConstraints": {
+      "type": "object",
+      "properties": {
+        "max_concurrent_tasks": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "max_concurrent_tasks",
+        "allowed_tools",
+        "forbidden_tools"
+      ],
+      "additionalProperties": false
+    },
+    "CommunicationProtocol": {
+      "type": "object",
+      "properties": {
+        "can_receive_from": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Coordinator",
+              "Worker",
+              "Supervisor",
+              "Critic"
+            ]
+          }
+        },
+        "can_send_to": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Coordinator",
+              "Worker",
+              "Supervisor",
+              "Critic"
+            ]
+          }
+        }
+      },
+      "required": [
+        "can_receive_from",
+        "can_send_to"
+      ],
+      "additionalProperties": false
+    },
+    "AgentRole": {
+      "type": "object",
+      "properties": {
+        "role_id": {
+          "type": "string"
+        },
+        "role_type": {
+          "type": "string",
+          "enum": [
+            "Coordinator",
+            "Worker",
+            "Supervisor",
+            "Critic"
+          ]
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "constraints": {
+          "$ref": "#/$defs/RoleConstraints"
+        },
+        "communication": {
+          "$ref": "#/$defs/CommunicationProtocol"
+        }
+      },
+      "required": [
+        "role_id",
+        "role_type",
+        "capabilities",
+        "constraints",
+        "communication"
+      ],
+      "additionalProperties": false
+    },
+    "TimeLimits": {
+      "type": "object",
+      "properties": {
+        "max_execution_time_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "idle_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "max_execution_time_seconds",
+        "timeout_seconds",
+        "idle_timeout_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "MemoryLimits": {
+      "type": "object",
+      "properties": {
+        "max_memory_mb": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "memory_quota_mb": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "max_memory_mb",
+        "memory_quota_mb",
+        "max_context_tokens"
+      ],
+      "additionalProperties": false
+    },
+    "ResourceQuotas": {
+      "type": "object",
+      "properties": {
+        "max_api_calls_per_hour": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_tokens_per_request": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_tool_calls_per_task": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_concurrent_tasks": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "max_api_calls_per_hour",
+        "max_tokens_per_request",
+        "max_tool_calls_per_task",
+        "max_concurrent_tasks"
+      ],
+      "additionalProperties": false
+    },
+    "CapabilityNegotiation": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "allowed_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "escalation_policy": {
+          "type": "string",
+          "enum": [
+            "none",
+            "manual",
+            "automatic"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "allowed_capabilities",
+        "forbidden_capabilities",
+        "escalation_policy"
+      ],
+      "additionalProperties": false
+    },
+    "ExecutionConstraints": {
+      "type": "object",
+      "properties": {
+        "time_limits": {
+          "$ref": "#/$defs/TimeLimits"
+        },
+        "memory_limits": {
+          "$ref": "#/$defs/MemoryLimits"
+        },
+        "resource_quotas": {
+          "$ref": "#/$defs/ResourceQuotas"
+        },
+        "capability_negotiation": {
+          "$ref": "#/$defs/CapabilityNegotiation"
+        }
+      },
+      "required": [
+        "time_limits",
+        "memory_limits",
+        "resource_quotas",
+        "capability_negotiation"
+      ],
+      "additionalProperties": false
+    },
+    "TriggerConfig": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "Action": {
+      "type": "object",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": [
+            "invoke_tool",
+            "update_memory",
+            "send_message",
+            "log_event"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "action_type",
+        "target",
+        "priority"
+      ],
+      "additionalProperties": false
+    },
+    "RetryPolicy": {
+      "type": "object",
+      "properties": {
+        "max_retries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "backoff_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "max_retries",
+        "backoff_ms"
+      ],
+      "additionalProperties": false
+    },
+    "SubscriptionConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "handler": {
+          "type": "string"
+        },
+        "retry_policy": {
+          "$ref": "#/$defs/RetryPolicy"
+        }
+      },
+      "required": [
+        "enabled",
+        "retry_policy"
+      ],
+      "additionalProperties": false
+    },
+    "EventDefinition": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string"
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "tool_invocation",
+            "task_completion",
+            "error_occurred",
+            "memory_update",
+            "state_change"
+          ]
+        },
+        "trigger": {
+          "$ref": "#/$defs/TriggerConfig"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Action"
+          }
+        },
+        "subscription": {
+          "$ref": "#/$defs/SubscriptionConfig"
+        }
+      },
+      "required": [
+        "event_id",
+        "event_type",
+        "trigger",
+        "actions",
+        "subscription"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

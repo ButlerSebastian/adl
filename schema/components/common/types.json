@@ -1,0 +1,24 @@
+{
+  "title": "Common Types",
+  "description": "Common type definitions used across the ADL schema.",
+  "$defs": {
+    "StringValue": {
+      "type": "string"
+    },
+    "NumberValue": {
+      "type": "number"
+    },
+    "BooleanValue": {
+      "type": "boolean"
+    },
+    "ArrayValue": {
+      "type": "array"
+    },
+    "ObjectValue": {
+      "type": "object"
+    },
+    "NullValue": {
+      "type": "null"
+    }
+  }
+}

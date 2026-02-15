@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/multi-model",
+  "title": "Multi-Model LLM Configuration",
+  "description": "Configuration for agents that use multiple LLMs with routing and fallback logic",
+  "type": "object",
+  "properties": {
+    "llm": {
+      "type": "string",
+      "description": "Identifier of the primary LLM model or provider (e.g., 'gpt-4', 'claude-3')."
+    },
+    "llm_settings": {
+      "type": "object",
+      "description": "Model configuration settings for the primary LLM.",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "description": "Sampling temperature for the LLM."
+        },
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum tokens per LLM request."
+        }
+      },
+      "required": ["temperature", "max_tokens"]
+    },
+    "llm_config": {
+      "type": "object",
+      "description": "Multi-model configuration with routing and fallback logic.",
+      "properties": {
+        "primary": {
+          "type": "object",
+          "description": "Primary LLM configuration.",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Model identifier (e.g., 'gpt-4-turbo', 'claude-3-opus')."
+            },
+            "provider": {
+              "type": "string",
+              "description": "Provider name (e.g., 'openai', 'anthropic', 'google', 'cohere', 'mistral', 'meta', 'huggingface')."
+            },
+            "temperature": {
+              "type": "number",
+              "description": "Sampling temperature."
+            },
+            "max_tokens": {
+              "type": "integer",
+              "description": "Maximum tokens per request."
+            },
+            "model_version": {
+              "type": "string",
+              "description": "Specific model version (e.g., 'gpt-4-1106-preview')."
+            },
+            "capabilities": {
+              "type": "array",
+              "description": "List of capabilities this model provides.",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["model", "provider"]
+        },
+        "fallback": {
+          "type": "object",
+          "description": "Fallback LLM configuration.",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Model identifier (e.g., 'gpt-3.5-turbo', 'claude-3-sonnet')."
+            },
+            "provider": {
+              "type": "string",
+              "description": "Provider name (e.g., 'openai', 'anthropic')."
+            },
+            "temperature": {
+              "type": "number",
+              "description": "Sampling temperature."
+            },
+            "max_tokens": {
+              "type": "integer",
+              "description": "Maximum tokens per request."
+            },
+            "model_version": {
+              "type": "string",
+              "description": "Specific model version."
+            },
+            "capabilities": {
+              "type": "array",
+              "description": "List of capabilities this model provides.",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["model", "provider"]
+        },
+        "specialized": {
+          "type": "array",
+          "description": "Specialized LLMs for specific tasks or domains.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "description": "Model identifier."
+              },
+              "provider": {
+                "type": "string",
+                "description": "Provider name."
+              },
+              "purpose": {
+                "type": "string",
+                "description": "Specific purpose or domain for this model."
+              },
+              "temperature": {
+                "type": "number",
+                "description": "Sampling temperature."
+              },
+              "max_tokens": {
+                "type": "integer",
+                "description": "Maximum tokens per request."
+              },
+              "model_version": {
+                "type": "string",
+                "description": "Specific model version."
+              },
+              "capabilities": {
+                "type": "array",
+                "description": "List of capabilities this model provides.",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["model", "provider", "purpose"]
+          }
+        },
+        "routing": {
+          "type": "object",
+          "description": "Routing configuration for multi-model selection.",
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": ["primary", "fallback", "round_robin", "load_balanced", "cost_optimized", "performance_optimized"],
+              "description": "Strategy for selecting which LLM to use."
+            },
+            "conditions": {
+              "type": "array",
+              "description": "Conditions for routing decisions.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["cost", "latency", "quality", "availability", "fallback"],
+                    "description": "Type of condition."
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "description": "Threshold value for the condition."
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": ["use_primary", "use_fallback", "retry", "fail"],
+                    "description": "Action to take when condition is met."
+                  }
+                },
+                "required": ["type", "threshold", "action"]
+              }
+            },
+            "fallback_conditions": {
+              "type": "array",
+              "description": "Conditions that trigger fallback to secondary LLM.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["error_rate", "latency_ms", "cost_per_token", "availability_percentage"],
+                    "description": "Type of fallback condition."
+                  },
+                  "threshold": {
+                    "type": "number",
+                    "description": "Threshold value for fallback."
+                  }
+                },
+                "required": ["type", "threshold"]
+              }
+            },
+            "cost_optimization": {
+              "type": "object",
+              "description": "Cost optimization settings.",
+              "properties": {
+                "max_cost_per_request": {
+                  "type": "number",
+                  "description": "Maximum cost allowed per request."
+                },
+                "preferred_providers": {
+                  "type": "array",
+                  "description": "Ordered list of preferred providers.",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "budget_limits": {
+                  "type": "object",
+                  "description": "Budget limits for different providers.",
+                  "properties": {
+                    "daily": {
+                      "type": "number",
+                      "description": "Daily budget limit."
+                    },
+                    "monthly": {
+                      "type": "number",
+                      "description": "Monthly budget limit."
+                    },
+                    "per_request": {
+                      "type": "number",
+                      "description": "Maximum cost per request."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

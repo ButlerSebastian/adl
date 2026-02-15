@@ -7,5 +7,8 @@
   },
   "scripts": {
     "validate:example": "node tools/validate.js examples/creative_producer_agent.json"
+  },
+  "dependencies": {
+    "ajv-formats": "^3.0.1"
   }
 }

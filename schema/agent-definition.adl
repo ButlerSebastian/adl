@@ -1,0 +1,440 @@
+# ADL Agent Definition DSL
+# This file defines the ADL v2 agent schema using ADL DSL
+
+# Import modules for true modularization
+import schema/components/rag
+import schema/components/tool
+import schema/components/memory
+import schema/components/common
+
+# Enum definitions
+enum Lifecycle {
+  stable
+  beta
+  deprecated
+  experimental
+}
+
+enum ChangeType {
+  breaking
+  non-breaking
+  patch
+}
+
+enum MemoryType {
+  episodic
+  semantic
+  working
+  hybrid
+}
+
+enum RoleType {
+  Coordinator
+  Worker
+  Supervisor
+  Critic
+}
+
+enum EventType {
+  tool_invocation
+  task_completion
+  error_occurred
+  memory_update
+  state_change
+}
+
+enum ActionType {
+  invoke_tool
+  update_memory
+  send_message
+  log_event
+}
+
+enum RoutingStrategy {
+  round_robin
+  least_loaded
+  priority_based
+  task_based
+}
+
+enum EvictionPolicy {
+  lru
+  lfu
+  fifo
+  random
+}
+
+enum HybridStrategy {
+  weighted
+  reciprocal_rank_fusion
+  rrf
+}
+
+enum EscalationPolicy {
+  none
+  manual
+  automatic
+}
+
+# Type definitions
+type LlmSettings {
+  temperature: number
+  max_tokens: integer
+  model_routing?: ModelRouting
+  model_constraints?: ModelConstraints
+}
+
+type ModelRouting {
+  enabled: boolean
+  primary_model: string
+  fallback_models: string[]
+  specialized_models: SpecializedModel[]
+  routing_strategy: RoutingStrategy
+}
+
+type SpecializedModel {
+  model: string
+  task_types: string[]
+  priority: integer (1..10)
+}
+
+type ModelConstraints {
+  max_tokens_per_request: integer
+  max_requests_per_minute: integer
+  cost_limit_per_hour: number
+  timeout_seconds: integer
+}
+
+type ToolDefinition {
+  id?: string
+  tool_id?: string
+  version?: integer
+  name: string
+  display_name?: string
+  description: string
+  category?: string
+  subcategory?: string
+  parameters: ToolParameter[]
+  returns?: ToolReturnSchema
+  invocation?: ToolInvocation
+  keys_schema?: KeySchemaItem[]
+  permissions?: ToolPermissions
+  sources?: string[]
+  dependencies?: string[]
+  status?: ToolStatus
+  visibility?: ToolVisibility
+  created_at?: string
+  created_by?: string
+  code_file?: string
+}
+
+type ToolParameter {
+  name: string
+  type: string
+  description: string
+  required: boolean
+  default?: string | number | boolean | object | array | null
+  enum?: any[]
+  minimum?: number
+  maximum?: number
+  exclusiveMinimum?: number
+  exclusiveMaximum?: number
+  minLength?: integer
+  maxLength?: integer
+  minItems?: integer
+  maxItems?: integer
+  multipleOf?: number
+  pattern?: string
+  format?: string
+  properties?: object
+  required_properties?: string[]
+  uniqueItems?: boolean
+  oneOf?: any[]
+  anyOf?: any[]
+  allOf?: any[]
+}
+
+type ToolReturnSchema {
+  type: string
+  description: string
+  content_type?: string
+  schema: object | string
+  examples?: any[]
+}
+
+type ToolInvocation {
+  type: string
+  function?: string
+}
+
+type KeySchemaItem {
+  name: string
+  key_type: string
+  description: string
+}
+
+type ToolPermissions {
+  file_read: string[]
+  file_write: string[]
+  network: boolean
+  env_vars: string[]
+}
+
+type ToolStatus {
+  active
+  deprecated
+  experimental
+}
+
+type ToolVisibility {
+  public
+  private
+  internal
+}
+
+type RagIndex {
+  id: string
+  name: string
+  rag_type: string
+  virtual_index_path: string
+  location_type: string
+  remote_path?: string | null
+  metadata: object
+  hierarchical_config?: HierarchicalConfig
+  search_config?: SearchConfig
+  cross_file_references?: CrossFileReferences
+}
+
+type HierarchicalConfig {
+  enabled: boolean
+  levels: HierarchicalLevel[]
+}
+
+type HierarchicalLevel {
+  level: integer (1..)
+  chunk_size: integer (1..)
+  overlap: integer (0..)
+  parent_index?: string
+}
+
+type SearchConfig {
+  vector_search?: VectorSearchConfig
+  keyword_search?: KeywordSearchConfig
+  hybrid_strategy?: HybridStrategy
+  fusion_weight?: number (0..1)
+}
+
+type VectorSearchConfig {
+  enabled: boolean
+  top_k: integer (1..)
+  similarity_threshold: number (0..1)
+}
+
+type KeywordSearchConfig {
+  enabled: boolean
+  top_k: integer (1..)
+  bm25_weight: number (0..1)
+}
+
+type CrossFileReferences {
+  enabled: boolean
+  reference_types: ReferenceType[]
+  max_depth: integer (1..)
+}
+
+type ReferenceType {
+  citation
+  hyperlink
+  semantic
+  custom
+}
+
+type MemoryDefinition {
+  type: MemoryType
+  scope: MemoryScope
+  backend: MemoryBackend
+  retention: RetentionPolicyConfig
+  write_policy: MemoryWritePolicy
+  read_policy: MemoryReadPolicy
+  privacy: PrivacySettings
+  lifecycle_management?: LifecycleManagement
+  eviction_policy?: EvictionPolicyConfig
+  storage_strategy?: StorageStrategy
+}
+
+type MemoryScope {
+  session
+  user
+  org
+  global
+}
+
+type MemoryBackend {
+  vector
+  kv
+  graph
+  external
+}
+
+type RetentionPolicyConfig {
+  policy: RetentionPolicyType
+  duration?: string
+}
+
+type RetentionPolicyType {
+  ttl
+  versioned
+  append_only
+}
+
+type MemoryWritePolicy {
+  explicit
+  implicit
+}
+
+type MemoryReadPolicy {
+  on_demand
+  always
+}
+
+type PrivacySettings {
+  pii: boolean
+  encryption: boolean
+}
+
+type LifecycleManagement {
+  auto_cleanup: boolean
+  cleanup_interval_hours: integer (1..)
+  max_entries: integer (1..)
+}
+
+type EvictionPolicyConfig {
+  policy: EvictionPolicy
+  threshold_percentage: integer (1..100)
+  preserve_recent: boolean
+  preserve_important: boolean
+}
+
+type StorageStrategy {
+  compression: boolean
+  indexing: boolean
+  caching: boolean
+}
+
+type AgentRole {
+  role_id: string
+  role_type: RoleType
+  capabilities: string[]
+  constraints: RoleConstraints
+  communication: CommunicationProtocol
+}
+
+type RoleConstraints {
+  max_concurrent_tasks: integer (1..)
+  allowed_tools: string[]
+  forbidden_tools: string[]
+}
+
+type CommunicationProtocol {
+  can_receive_from: RoleType[]
+  can_send_to: RoleType[]
+}
+
+type ExecutionConstraints {
+  time_limits: TimeLimits
+  memory_limits: MemoryLimits
+  resource_quotas: ResourceQuotas
+  capability_negotiation: CapabilityNegotiation
+}
+
+type TimeLimits {
+  max_execution_time_seconds: integer (1..)
+  timeout_seconds: integer (1..)
+  idle_timeout_seconds: integer (1..)
+}
+
+type MemoryLimits {
+  max_memory_mb: integer (1..)
+  memory_quota_mb: integer (1..)
+  max_context_tokens: integer (1..)
+}
+
+type ResourceQuotas {
+  max_api_calls_per_hour: integer (1..)
+  max_tokens_per_request: integer (1..)
+  max_tool_calls_per_task: integer (1..)
+  max_concurrent_tasks: integer (1..)
+}
+
+type CapabilityNegotiation {
+  enabled: boolean
+  allowed_capabilities: string[]
+  forbidden_capabilities: string[]
+  escalation_policy: EscalationPolicy
+}
+
+type EventDefinition {
+  event_id: string
+  event_type: EventType
+  trigger: TriggerConfig
+  actions: Action[]
+  subscription: SubscriptionConfig
+}
+
+type TriggerConfig {
+  condition?: string
+  source?: string
+  filters?: object
+}
+
+type Action {
+  action_type: ActionType
+  target: string
+  parameters?: object
+  priority: integer (1..10)
+}
+
+type SubscriptionConfig {
+  enabled: boolean
+  handler?: string
+  retry_policy: RetryPolicy
+}
+
+type RetryPolicy {
+  max_retries: integer (0..)
+  backoff_ms: integer (0..)
+}
+
+type Compatibility {
+  adl_spec?: string
+  previous_versions?: string[]
+}
+
+type ChangeLog {
+  type: ChangeType
+  summary?: string
+  details?: string[]
+}
+
+# Agent definition
+agent AgentDefinition {
+  id: string
+  version: integer
+  version_string?: string
+  lifecycle?: Lifecycle
+  compatibility?: Compatibility
+  change_log?: ChangeLog
+  name: string
+  description: string
+  role: string
+  llm: string
+  llm_settings: LlmSettings
+  tools: ToolDefinition[]
+  rag: RagIndex[]
+  memory?: MemoryDefinition
+  owner?: string
+  document_index_id?: string
+  agent_roles?: AgentRole[]
+  execution_constraints?: ExecutionConstraints
+  events?: EventDefinition[]
+}

@@ -2,6 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const Ajv = require("ajv");
+const addFormats = require("ajv-formats");
 
 const ROOT = path.resolve(__dirname, "..");
 const schemaPath = path.join(ROOT, "schema", "agent-definition.schema.json");
@@ -15,7 +16,8 @@ const agentPath = path.resolve(process.argv[2]);
 const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
 const instance = JSON.parse(fs.readFileSync(agentPath, "utf8"));
 
-const ajv = new Ajv({ allErrors: true });
+const ajv = new Ajv({ allErrors: true, strict: false });
+addFormats(ajv);
 const validate = ajv.compile(schema);
 const valid = validate(instance);
 

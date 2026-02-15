@@ -1,0 +1,141 @@
+{
+  "id": "constrained-agent-001",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Constrained Research Assistant",
+  "description": "A research assistant with strict execution constraints and capability negotiation.",
+  "role": "Research Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 2048
+  },
+  "execution_constraints": {
+    "time_limits": {
+      "max_execution_time_seconds": 300,
+      "timeout_seconds": 60,
+      "idle_timeout_seconds": 120
+    },
+    "memory_limits": {
+      "max_memory_mb": 512,
+      "memory_quota_mb": 256,
+      "max_context_tokens": 8192
+    },
+    "resource_quotas": {
+      "max_api_calls_per_hour": 100,
+      "max_tokens_per_request": 2048,
+      "max_tool_calls_per_task": 10,
+      "max_concurrent_tasks": 3
+    },
+    "capability_negotiation": {
+      "enabled": true,
+      "allowed_capabilities": [
+        "web_search",
+        "document_analysis",
+        "data_extraction"
+      ],
+      "forbidden_capabilities": [
+        "file_system_write",
+        "network_access",
+        "external_api_calls"
+      ],
+      "escalation_policy": "manual"
+    }
+  },
+  "tools": [
+    {
+      "name": "search_documents",
+      "description": "Search through indexed documents.",
+      "category": "data_access.document_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of results to return.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "document_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              },
+              "relevance_score": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "extract_data",
+      "description": "Extract structured data from documents.",
+      "category": "data_processing.extraction",
+      "parameters": [
+        {
+          "name": "document_id",
+          "type": "string",
+          "description": "Document ID to extract data from.",
+          "required": true
+        },
+        {
+          "name": "extraction_schema",
+          "type": "object",
+          "description": "Schema for data extraction.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Extracted data.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object"
+            },
+            "confidence": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "1d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

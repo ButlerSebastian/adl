@@ -1,0 +1,92 @@
+{
+  "title": "Memory Definition",
+  "type": "object",
+  "description": "Memory configuration for the agent, defining how it stores, retrieves, and governs state across interactions.",
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "episodic",
+        "semantic",
+        "working",
+        "hybrid"
+      ],
+      "description": "Type of memory system."
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "session",
+        "user",
+        "org",
+        "global"
+      ],
+      "description": "Scope of memory visibility and sharing."
+    },
+    "backend": {
+      "type": "string",
+      "enum": [
+        "vector",
+        "kv",
+        "graph",
+        "external"
+      ],
+      "description": "Backend storage type for memory."
+    },
+    "retention": {
+      "type": "object",
+      "description": "Retention policy for memory data.",
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string",
+          "enum": [
+            "ttl",
+            "versioned",
+            "append-only"
+          ],
+          "description": "Retention policy type."
+        },
+        "duration": {
+          "type": "string",
+          "description": "Duration for retention (e.g., '30d', '7d', '1h')."
+        }
+      },
+      "required": [
+        "policy"
+      ]
+    },
+    "write_policy": {
+      "type": "string",
+      "enum": [
+        "explicit",
+        "implicit"
+      ],
+      "description": "When memory writes occur."
+    },
+    "read_policy": {
+      "type": "string",
+      "enum": [
+        "on_demand",
+        "always"
+      ],
+      "description": "When memory reads occur."
+    },
+    "privacy": {
+      "type": "object",
+      "description": "Privacy and security settings for memory.",
+      "additionalProperties": false,
+      "properties": {
+        "pii": {
+          "type": "boolean",
+          "description": "Whether memory may contain personally identifiable information."
+        },
+        "encryption": {
+          "type": "boolean",
+          "description": "Whether memory data should be encrypted at rest."
+        }
+      }
+    }
+  }
+}

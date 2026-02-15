@@ -1,0 +1,47 @@
+{
+  "title": "RAG Index Definition",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique ID of the RAG index."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the RAG index."
+    },
+    "rag_type": {
+      "type": "string",
+      "description": "Type of RAG index (e.g., 'doc', 'code', 'image')."
+    },
+    "virtual_index_path": {
+      "type": "string",
+      "description": "Virtual path or logical mount point under which this index is exposed."
+    },
+    "location_type": {
+      "type": "string",
+      "description": "Location type, e.g., 'local', 's3', 'gcs', etc."
+    },
+    "remote_path": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional remote path or bucket/key for the index."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata associated with this RAG index.",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "rag_type",
+    "virtual_index_path",
+    "location_type",
+    "metadata"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "title": "Key Schema Item",
+  "type": "object",
+  "description": "Definition of a required key (typically for environment-based configuration).",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the key or environment variable."
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of what this key is used for."
+    },
+    "key_type": {
+      "type": "string",
+      "description": "Type of key, e.g., 'environment_variable', 'api_key', etc."
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "key_type"
+  ]
+}

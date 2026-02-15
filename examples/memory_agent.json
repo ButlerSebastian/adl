@@ -1,0 +1,131 @@
+{
+  "id": "memory-agent-001",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Memory-Enhanced Assistant",
+  "description": "An assistant with advanced memory capabilities including episodic and semantic memory with lifecycle management.",
+  "role": "Personal Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.4,
+    "max_tokens": 2048
+  },
+  "memory": {
+    "type": "episodic",
+    "scope": "user",
+    "backend": "vector",
+    "retention": {
+      "policy": "versioned",
+      "duration": "30d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "always",
+    "privacy": {
+      "pii": true,
+      "encryption": true
+    },
+    "lifecycle_management": {
+      "auto_cleanup": true,
+      "cleanup_interval_hours": 24,
+      "max_entries": 10000
+    },
+    "eviction_policy": {
+      "policy": "lru",
+      "threshold_percentage": 80,
+      "preserve_recent": true,
+      "preserve_important": true
+    },
+    "storage_strategy": {
+      "compression": true,
+      "indexing": true,
+      "caching": true
+    }
+  },
+  "tools": [
+    {
+      "name": "store_memory",
+      "description": "Store information in episodic memory with lifecycle management.",
+      "category": "memory.storage",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string",
+          "description": "Memory key.",
+          "required": true
+        },
+        {
+          "name": "value",
+          "type": "object",
+          "description": "Memory value.",
+          "required": true
+        },
+        {
+          "name": "importance",
+          "type": "integer",
+          "description": "Importance score (1-10).",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Storage operation status.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "memory_id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "retrieve_memory",
+      "description": "Retrieve information from episodic memory.",
+      "category": "memory.retrieval",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "top_k",
+          "type": "integer",
+          "description": "Number of results to retrieve.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Retrieved memories.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "object"
+              },
+              "score": {
+                "type": "number"
+              },
+              "timestamp": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": []
+}

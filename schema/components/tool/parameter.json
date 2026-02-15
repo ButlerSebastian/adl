@@ -1,0 +1,128 @@
+{
+  "title": "Tool Parameter",
+  "type": "object",
+  "description": "Definition of a single parameter accepted by a tool, with enhanced type constraints for validation (see enhanced-type-system.md).",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Parameter name as used in the tool\u2019s function signature or input schema."
+    },
+    "type": {
+      "type": "string",
+      "description": "Logical type of the parameter (e.g., 'string', 'number', 'boolean', 'object')."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable explanation of the parameter."
+    },
+    "required": {
+      "type": "boolean",
+      "description": "Whether this parameter is required.",
+      "default": false
+    },
+    "default": {
+      "description": "Optional default value if the parameter is omitted.",
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "object",
+        "array",
+        "null"
+      ]
+    },
+    "format": {
+      "type": "string",
+      "description": "String format validation (e.g., 'email', 'uri', 'uuid', 'date-time', 'ipv4', 'ipv6')."
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Regex pattern for string validation (ECMA-262)."
+    },
+    "minLength": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum string length."
+    },
+    "maxLength": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum string length."
+    },
+    "minimum": {
+      "type": "number",
+      "description": "Minimum numeric value (inclusive)."
+    },
+    "maximum": {
+      "type": "number",
+      "description": "Maximum numeric value (inclusive)."
+    },
+    "exclusiveMinimum": {
+      "type": "number",
+      "description": "Minimum numeric value (exclusive)."
+    },
+    "exclusiveMaximum": {
+      "type": "number",
+      "description": "Maximum numeric value (exclusive)."
+    },
+    "multipleOf": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Value must be multiple of this number."
+    },
+    "enum": {
+      "type": "array",
+      "description": "Allowed values for the parameter."
+    },
+    "items": {
+      "description": "Schema for array items (when type is 'array')."
+    },
+    "minItems": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Minimum array length."
+    },
+    "maxItems": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Maximum array length."
+    },
+    "uniqueItems": {
+      "type": "boolean",
+      "default": false,
+      "description": "Array items must be unique."
+    },
+    "properties": {
+      "type": "object",
+      "description": "Object property schemas (when type is 'object')."
+    },
+    "required_properties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required object properties."
+    },
+    "additionalProperties": {
+      "description": "Allow additional object properties (boolean or schema)."
+    },
+    "anyOf": {
+      "type": "array",
+      "description": "Union type schemas (value matches any)."
+    },
+    "oneOf": {
+      "type": "array",
+      "description": "Exclusive type schemas (value matches exactly one)."
+    },
+    "allOf": {
+      "type": "array",
+      "description": "Intersection type schemas (value matches all)."
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "description"
+  ]
+}

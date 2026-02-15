@@ -1,0 +1,129 @@
+{
+  "id": "multi-model-agent-001",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Multi-Model Assistant",
+  "description": "An assistant with multi-model support, task-based routing, and LLM-specific constraints.",
+  "role": "General Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.5,
+    "max_tokens": 2048,
+    "model_routing": {
+      "enabled": true,
+      "primary_model": "gpt-4",
+      "fallback_models": ["gpt-3.5-turbo", "claude-3-sonnet"],
+      "specialized_models": [
+        {
+          "model": "gpt-4-turbo",
+          "task_types": ["code_generation", "analysis"],
+          "priority": 9
+        },
+        {
+          "model": "claude-3-opus",
+          "task_types": ["creative_writing", "summarization"],
+          "priority": 8
+        },
+        {
+          "model": "gpt-3.5-turbo",
+          "task_types": ["simple_qa", "quick_response"],
+          "priority": 5
+        }
+      ],
+      "routing_strategy": "task_based"
+    },
+    "model_constraints": {
+      "max_tokens_per_request": 4096,
+      "max_requests_per_minute": 60,
+      "cost_limit_per_hour": 10.0,
+      "timeout_seconds": 30
+    }
+  },
+  "tools": [
+    {
+      "name": "generate_code",
+      "description": "Generate code using specialized model for code generation.",
+      "category": "code_generation.development",
+      "parameters": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Code generation prompt.",
+          "required": true
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "Programming language.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Generated code.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "model_used": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "creative_write",
+      "description": "Generate creative content using specialized model.",
+      "category": "content_generation.writing",
+      "parameters": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Creative writing prompt.",
+          "required": true
+        },
+        {
+          "name": "style",
+          "type": "string",
+          "description": "Writing style.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Generated content.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "model_used": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "1d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

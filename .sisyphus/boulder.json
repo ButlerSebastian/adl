@@ -1,15 +1,10 @@
 {
-  "active_plan": "/home/ubuntu/adl/.sisyphus/plans/adl-phase2-implementation.md",
-  "started_at": "2026-02-15T06:32:49.235Z",
-  "session_ids": ["ses_3a0785a2affey2qt8mKNeoWwcm", "ses_39f9523f9ffeSP0Zp7JqD8IdAe"],
-  "plan_name": "adl-phase2-implementation",
-  "status": "complete",
-  "completion_date": "2026-02-15T08:37:00Z",
-  "tasks_completed": 37,
-  "tasks_total": 37,
-  "validation": {
-    "schema_valid": true,
-    "examples_valid": 5,
-    "examples_total": 5
-  }
+  "active_plan": "/home/ubuntu/adl/.sisyphus/plans/adl-dsl-revamp.md",
+  "started_at": "2026-02-15T14:00:12.175Z",
+  "session_ids": ["ses_3a0785a2affey2qt8mKNeoWwcm"],
+  "plan_name": "adl-dsl-revamp",
+  "status": "in_progress",
+  "current_phase": "1",
+  "current_task": "3.1.1 - Implement proper import resolution system",
+  "notes": "Starting DSL revamp work session. Phase 1: Foundation."
 }

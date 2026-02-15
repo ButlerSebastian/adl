@@ -1,0 +1,5 @@
+{
+  "title": "Agent Role",
+  "type": "string",
+  "description": "Short role label for the agent (e.g., 'Creative Producer')."
+}

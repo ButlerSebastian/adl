@@ -1,0 +1,268 @@
+{
+  "id": "multi-agent-team-001",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Research Analysis Team",
+  "description": "A coordinated multi-agent team for comprehensive research analysis with specialized roles.",
+  "role": "Multi-Agent Team",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 4096
+  },
+  "agent_roles": [
+    {
+      "role_id": "coordinator-001",
+      "role_type": "Coordinator",
+      "capabilities": [
+        "task_delegation",
+        "result_aggregation",
+        "workflow_orchestration"
+      ],
+      "constraints": {
+        "max_concurrent_tasks": 10,
+        "allowed_tools": [
+          "delegate_task",
+          "aggregate_results",
+          "monitor_progress"
+        ],
+        "forbidden_tools": [
+          "execute_research",
+          "analyze_data"
+        ]
+      },
+      "communication": {
+        "can_receive_from": ["Supervisor"],
+        "can_send_to": ["Worker", "Supervisor", "Critic"]
+      }
+    },
+    {
+      "role_id": "worker-001",
+      "role_type": "Worker",
+      "capabilities": [
+        "data_collection",
+        "document_analysis",
+        "web_scraping"
+      ],
+      "constraints": {
+        "max_concurrent_tasks": 5,
+        "allowed_tools": [
+          "search_web",
+          "read_document",
+          "extract_data"
+        ],
+        "forbidden_tools": [
+          "delegate_task",
+          "aggregate_results"
+        ]
+      },
+      "communication": {
+        "can_receive_from": ["Coordinator", "Supervisor"],
+        "can_send_to": ["Coordinator", "Critic"]
+      }
+    },
+    {
+      "role_id": "supervisor-001",
+      "role_type": "Supervisor",
+      "capabilities": [
+        "quality_control",
+        "progress_monitoring",
+        "error_handling"
+      ],
+      "constraints": {
+        "max_concurrent_tasks": 3,
+        "allowed_tools": [
+          "validate_output",
+          "check_progress",
+          "handle_errors"
+        ],
+        "forbidden_tools": [
+          "execute_research",
+          "delegate_task"
+        ]
+      },
+      "communication": {
+        "can_receive_from": ["Coordinator", "Worker", "Critic"],
+        "can_send_to": ["Coordinator", "Worker"]
+      }
+    },
+    {
+      "role_id": "critic-001",
+      "role_type": "Critic",
+      "capabilities": [
+        "result_evaluation",
+        "bias_detection",
+        "recommendation_improvement"
+      ],
+      "constraints": {
+        "max_concurrent_tasks": 2,
+        "allowed_tools": [
+          "evaluate_results",
+          "detect_bias",
+          "suggest_improvements"
+        ],
+        "forbidden_tools": [
+          "execute_research",
+          "delegate_task",
+          "aggregate_results"
+        ]
+      },
+      "communication": {
+        "can_receive_from": ["Coordinator", "Worker", "Supervisor"],
+        "can_send_to": ["Coordinator", "Supervisor"]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "delegate_task",
+      "description": "Delegate a task to a specific worker role.",
+      "category": "workflow.task_management",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "string",
+          "description": "Unique identifier for the task.",
+          "required": true
+        },
+        {
+          "name": "target_role",
+          "type": "string",
+          "description": "Role type to delegate the task to.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Status of task delegation.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "aggregate_results",
+      "description": "Aggregate results from multiple worker roles.",
+      "category": "workflow.result_management",
+      "parameters": [
+        {
+          "name": "result_ids",
+          "type": "array",
+          "description": "List of result identifiers to aggregate.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Aggregated results.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "aggregated_data": {
+              "type": "object"
+            },
+            "summary": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "search_web",
+      "description": "Search the web for information.",
+      "category": "data_access.web_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "evaluate_results",
+      "description": "Evaluate the quality and accuracy of results.",
+      "category": "analysis.quality_control",
+      "parameters": [
+        {
+          "name": "results",
+          "type": "array",
+          "description": "Results to evaluate.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Evaluation report.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "quality_score": {
+              "type": "number"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "recommendations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

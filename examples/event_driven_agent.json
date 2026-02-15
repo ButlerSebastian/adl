@@ -1,0 +1,310 @@
+{
+  "id": "event-driven-agent-001",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Event-Driven Data Processor",
+  "description": "An agent that processes data using event-driven tool invocation patterns.",
+  "role": "Data Processor",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.2,
+    "max_tokens": 2048
+  },
+  "events": [
+    {
+      "event_id": "on-data-received",
+      "event_type": "tool_invocation",
+      "trigger": {
+        "source": "receive_data",
+        "condition": "data.size > 0",
+        "filters": {
+          "data_type": "json"
+        }
+      },
+      "actions": [
+        {
+          "action_type": "invoke_tool",
+          "target": "validate_data",
+          "parameters": {
+            "data": "${event.data}",
+            "schema": "${event.schema}"
+          },
+          "priority": 10
+        },
+        {
+          "action_type": "log_event",
+          "target": "system",
+          "parameters": {
+            "message": "Data received and validation started",
+            "level": "info"
+          },
+          "priority": 5
+        }
+      ],
+      "subscription": {
+        "enabled": true,
+        "handler": "handle_data_received",
+        "retry_policy": {
+          "max_retries": 3,
+          "backoff_ms": 1000
+        }
+      }
+    },
+    {
+      "event_id": "on-validation-complete",
+      "event_type": "task_completion",
+      "trigger": {
+        "source": "validate_data",
+        "condition": "result.valid == true"
+      },
+      "actions": [
+        {
+          "action_type": "invoke_tool",
+          "target": "process_data",
+          "parameters": {
+            "data": "${event.data}",
+            "options": "${event.options}"
+          },
+          "priority": 10
+        },
+        {
+          "action_type": "update_memory",
+          "target": "validation_history",
+          "parameters": {
+            "key": "${event.data_id}",
+            "value": {
+              "timestamp": "${event.timestamp}",
+              "status": "validated",
+              "validator": "validate_data"
+            }
+          },
+          "priority": 7
+        }
+      ],
+      "subscription": {
+        "enabled": true,
+        "handler": "handle_validation_complete",
+        "retry_policy": {
+          "max_retries": 2,
+          "backoff_ms": 500
+        }
+      }
+    },
+    {
+      "event_id": "on-error-occurred",
+      "event_type": "error_occurred",
+      "trigger": {
+        "source": "*",
+        "condition": "error.severity == 'critical'"
+      },
+      "actions": [
+        {
+          "action_type": "log_event",
+          "target": "system",
+          "parameters": {
+            "message": "Critical error occurred: ${error.message}",
+            "level": "error"
+          },
+          "priority": 10
+        },
+        {
+          "action_type": "send_message",
+          "target": "admin",
+          "parameters": {
+            "message": "Critical error in data processing",
+            "details": "${error.details}"
+          },
+          "priority": 9
+        },
+        {
+          "action_type": "update_memory",
+          "target": "error_log",
+          "parameters": {
+            "key": "${event.error_id}",
+            "value": {
+              "timestamp": "${event.timestamp}",
+              "error": "${error.message}",
+              "source": "${event.source}"
+            }
+          },
+          "priority": 8
+        }
+      ],
+      "subscription": {
+        "enabled": true,
+        "handler": "handle_critical_error",
+        "retry_policy": {
+          "max_retries": 5,
+          "backoff_ms": 2000
+        }
+      }
+    },
+    {
+      "event_id": "on-state-change",
+      "event_type": "state_change",
+      "trigger": {
+        "source": "agent",
+        "condition": "old_state != new_state"
+      },
+      "actions": [
+        {
+          "action_type": "log_event",
+          "target": "system",
+          "parameters": {
+            "message": "Agent state changed from ${old_state} to ${new_state}",
+            "level": "info"
+          },
+          "priority": 5
+        },
+        {
+          "action_type": "update_memory",
+          "target": "state_history",
+          "parameters": {
+            "key": "${event.timestamp}",
+            "value": {
+              "old_state": "${old_state}",
+              "new_state": "${new_state}",
+              "reason": "${event.reason}"
+            }
+          },
+          "priority": 6
+        }
+      ],
+      "subscription": {
+        "enabled": true,
+        "handler": "handle_state_change",
+        "retry_policy": {
+          "max_retries": 1,
+          "backoff_ms": 0
+        }
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "receive_data",
+      "description": "Receive data from external sources.",
+      "category": "data_ingestion.receive",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "string",
+          "description": "Data source identifier.",
+          "required": true
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "description": "Data format (json, csv, xml).",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Received data.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object"
+            },
+            "size": {
+              "type": "integer"
+            },
+            "timestamp": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "validate_data",
+      "description": "Validate data against a schema.",
+      "category": "data_processing.validation",
+      "parameters": [
+        {
+          "name": "data",
+          "type": "object",
+          "description": "Data to validate.",
+          "required": true
+        },
+        {
+          "name": "schema",
+          "type": "object",
+          "description": "Validation schema.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Validation result.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "process_data",
+      "description": "Process validated data.",
+      "category": "data_processing.transformation",
+      "parameters": [
+        {
+          "name": "data",
+          "type": "object",
+          "description": "Data to process.",
+          "required": true
+        },
+        {
+          "name": "options",
+          "type": "object",
+          "description": "Processing options.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Processed data.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "type": "object"
+            },
+            "metrics": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}
