@@ -1,1 +1,0 @@
-base on the roadmap.md choose which has higher priority follow to the least priority, focus on the current implementation and break down into atomic task using 5w2h use category "deep" or "ultrabrain" for decoupling task into atomic task
