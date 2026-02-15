@@ -60,42 +60,53 @@ ADL is guided by the following design principles:
 The ADL schema includes:
 
 ### 4.1 Agent Metadata
-- name  
-- description  
-- version  
-- role  
-- ownership  
+- name
+- description
+- version (integer and semantic version string)
+- lifecycle status
+- role
+- ownership
+- compatibility information
+- change log
 
 ### 4.2 LLM Configuration
-- model provider  
-- temperature  
-- max tokens  
-- parameters  
-- generation policies  
+- model provider
+- temperature
+- max tokens
+- parameters
+- generation policies
 
 ### 4.3 Tools
 Each tool includes:
-- name, description  
-- parameters (typed)  
-- return schemas  
-- dependencies  
-- invocation types  
-- permissions  
+- name, description
+- parameters (typed)
+- return schemas
+- dependencies
+- invocation types
+- permissions
 
 ### 4.4 Retrieval (RAG) Indices
-- index type (doc/code/image)  
-- metadata  
-- virtual paths  
-- location type  
+- index type (doc/code/image)
+- metadata
+- virtual paths
+- location type
 
-### 4.5 Sandbox Permissions
-- network  
-- file_read/file_write  
-- env variables  
+### 4.5 Memory Configuration
+- memory type (episodic, semantic, working, hybrid)
+- scope (session, user, org, global)
+- backend (vector, kv, graph, external)
+- retention policies
+- read/write policies
+- privacy settings (PII, encryption)
 
-### 4.6 Dependencies & Metadata
-- Pip packages  
-- Version pinning  
+### 4.6 Sandbox Permissions
+- network
+- file_read/file_write
+- env variables
+
+### 4.7 Dependencies & Metadata
+- Pip packages
+- Version pinning
 - Code file mapping  
 
 ---

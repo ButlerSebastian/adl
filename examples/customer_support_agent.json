@@ -1,0 +1,84 @@
+{
+  "id": "00000000-0000-0000-0000-000000000002",
+  "version": 1,
+  "version_string": "1.0.0",
+  "lifecycle": "stable",
+  "compatibility": {
+    "adl_spec": ">=1.0.0",
+    "previous_versions": []
+  },
+  "change_log": {
+    "type": "non-breaking",
+    "summary": "Initial release with episodic memory support for conversation history",
+    "details": [
+      "Added episodic memory for session-based conversation tracking",
+      "Configured 7-day TTL retention policy",
+      "Enabled encryption at rest for privacy compliance"
+    ]
+  },
+  "name": "customer_support_agent",
+  "description": "A customer support agent that maintains conversation history across sessions to provide personalized assistance.",
+  "role": "Customer Support Specialist",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  },
+  "owner": "support-team",
+  "rag": [],
+  "tools": [
+    {
+      "name": "lookup_order",
+      "description": "Look up customer order details by order ID.",
+      "parameters": [
+        {
+          "name": "order_id",
+          "type": "string",
+          "description": "The order ID to look up.",
+          "required": true
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "lookup_order"
+      }
+    },
+    {
+      "name": "update_ticket_status",
+      "description": "Update the status of a support ticket.",
+      "parameters": [
+        {
+          "name": "ticket_id",
+          "type": "string",
+          "description": "The ticket ID to update.",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "description": "The new status (e.g., 'open', 'in_progress', 'resolved').",
+          "required": true
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "update_ticket_status"
+      }
+    }
+  ],
+  "memory": {
+    "type": "episodic",
+    "scope": "user",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "always",
+    "privacy": {
+      "pii": true,
+      "encryption": true
+    }
+  }
+}

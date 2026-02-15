@@ -52,13 +52,14 @@ Enterprises adopting AI agents face several systemic challenges:
 
 ADL defines:
 
-- **Identity** — name, description, role, owner, version  
-- **LLM Settings** — provider, model, temperature, max tokens  
-- **Tools & Actions** — typed parameters, descriptions, return schemas  
-- **RAG Inputs** — indices, types, metadata, paths  
-- **Permissions** — file I/O, network, env vars  
-- **Dependencies** — Python packages with optional version pins  
-- **Governance** — created_by, approved_by, timestamps, version notes  
+- **Identity** — name, description, role, owner, version
+- **LLM Settings** — provider, model, temperature, max tokens
+- **Tools & Actions** — typed parameters, descriptions, return schemas
+- **RAG Inputs** — indices, types, metadata, paths
+- **Memory** — type, scope, backend, retention, policies, privacy settings
+- **Permissions** — file I/O, network, env vars
+- **Dependencies** — Python packages with optional version pins
+- **Governance** — lifecycle, compatibility, change logs, version notes  
 
 This makes agents:
 

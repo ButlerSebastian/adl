@@ -1,0 +1,119 @@
+{
+  "id": "00000000-0000-0000-0000-000000000004",
+  "version": 3,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "compatibility": {
+    "adl_spec": ">=1.0.0",
+    "previous_versions": []
+  },
+  "change_log": {
+    "type": "breaking",
+    "summary": "Major upgrade: Added global memory scope and changed tool signatures",
+    "details": [
+      "BREAKING: Changed search_documents tool to require index_id parameter",
+      "BREAKING: Removed deprecated query_analyzer tool",
+      "Added global memory scope for cross-user knowledge sharing",
+      "Migrated to append-only retention policy for audit compliance",
+      "Added new summarize_documents tool with enhanced capabilities"
+    ]
+  },
+  "name": "research_assistant_agent",
+  "description": "A research assistant that helps users find, analyze, and summarize documents from multiple knowledge bases.",
+  "role": "Research Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 8192
+  },
+  "owner": "research-team",
+  "rag": [
+    {
+      "id": "research-papers-001",
+      "name": "Research Papers",
+      "rag_type": "doc",
+      "virtual_index_path": "/rags/research-papers",
+      "location_type": "local",
+      "remote_path": null,
+      "metadata": {}
+    },
+    {
+      "id": "internal-docs-002",
+      "name": "Internal Documentation",
+      "rag_type": "doc",
+      "virtual_index_path": "/rags/internal-docs",
+      "location_type": "local",
+      "remote_path": null,
+      "metadata": {}
+    }
+  ],
+  "tools": [
+    {
+      "name": "search_documents",
+      "description": "Search for documents across all available indices.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "index_id",
+          "type": "string",
+          "description": "Specific index ID to search (required in v2.0.0).",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "description": "Maximum number of results to return.",
+          "required": false,
+          "default": 10
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "search_documents"
+      }
+    },
+    {
+      "name": "summarize_documents",
+      "description": "Generate a comprehensive summary of multiple documents.",
+      "parameters": [
+        {
+          "name": "document_ids",
+          "type": "array",
+          "description": "List of document IDs to summarize.",
+          "required": true
+        },
+        {
+          "name": "summary_type",
+          "type": "string",
+          "description": "Type of summary: 'brief', 'detailed', or 'executive'.",
+          "required": false,
+          "default": "detailed"
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "summarize_documents"
+      }
+    }
+  ],
+  "memory": {
+    "type": "semantic",
+    "scope": "global",
+    "backend": "vector",
+    "retention": {
+      "policy": "append-only",
+      "duration": "365d"
+    },
+    "write_policy": "explicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

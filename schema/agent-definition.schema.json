@@ -12,7 +12,59 @@
     "version": {
       "type": "integer",
       "minimum": 1,
-      "description": "Version number of this agent definition."
+      "description": "Version number of this agent definition. For semantic versioning, use version_string field."
+    },
+    "version_string": {
+      "type": "string",
+      "description": "Semantic version string (e.g., '1.2.0') for the agent definition.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["stable", "beta", "deprecated", "experimental"],
+      "description": "Lifecycle status of this agent version."
+    },
+    "compatibility": {
+      "type": "object",
+      "description": "Compatibility information for this agent version.",
+      "additionalProperties": false,
+      "properties": {
+        "adl_spec": {
+          "type": "string",
+          "description": "Minimum ADL spec version required (e.g., '>=1.0.0')."
+        },
+        "previous_versions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of compatible previous version patterns."
+        }
+      }
+    },
+    "change_log": {
+      "type": "object",
+      "description": "Change log information for this version.",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["breaking", "non-breaking", "patch"],
+          "description": "Type of change in this version."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable summary of changes."
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Detailed list of changes."
+        }
+      },
+      "required": ["type"]
     },
     "name": {
       "type": "string",
@@ -71,6 +123,70 @@
       "description": "Tools that this agent can call during reasoning and execution.",
       "items": {
         "$ref": "#/$defs/ToolDefinition"
+      }
+    },
+    "memory": {
+      "type": "object",
+      "description": "Memory configuration for the agent, defining how it stores, retrieves, and governs state across interactions.",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["episodic", "semantic", "working", "hybrid"],
+          "description": "Type of memory system."
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["session", "user", "org", "global"],
+          "description": "Scope of memory visibility and sharing."
+        },
+        "backend": {
+          "type": "string",
+          "enum": ["vector", "kv", "graph", "external"],
+          "description": "Backend storage type for memory."
+        },
+        "retention": {
+          "type": "object",
+          "description": "Retention policy for memory data.",
+          "additionalProperties": false,
+          "properties": {
+            "policy": {
+              "type": "string",
+              "enum": ["ttl", "versioned", "append-only"],
+              "description": "Retention policy type."
+            },
+            "duration": {
+              "type": "string",
+              "description": "Duration for retention (e.g., '30d', '7d', '1h')."
+            }
+          },
+          "required": ["policy"]
+        },
+        "write_policy": {
+          "type": "string",
+          "enum": ["explicit", "implicit"],
+          "description": "When memory writes occur."
+        },
+        "read_policy": {
+          "type": "string",
+          "enum": ["on_demand", "always"],
+          "description": "When memory reads occur."
+        },
+        "privacy": {
+          "type": "object",
+          "description": "Privacy and security settings for memory.",
+          "additionalProperties": false,
+          "properties": {
+            "pii": {
+              "type": "boolean",
+              "description": "Whether memory may contain personally identifiable information."
+            },
+            "encryption": {
+              "type": "boolean",
+              "description": "Whether memory data should be encrypted at rest."
+            }
+          }
+        }
       }
     }
   },

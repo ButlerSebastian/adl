@@ -1,0 +1,101 @@
+{
+  "id": "00000000-0000-0000-0000-000000000003",
+  "version": 2,
+  "version_string": "1.2.0",
+  "lifecycle": "stable",
+  "compatibility": {
+    "adl_spec": ">=1.0.0",
+    "previous_versions": ["1.1.x", "1.0.x"]
+  },
+  "change_log": {
+    "type": "non-breaking",
+    "summary": "Added semantic memory for knowledge base and improved intent routing",
+    "details": [
+      "Upgraded from episodic to hybrid memory (episodic + semantic)",
+      "Added semantic memory for product knowledge base",
+      "Improved intent routing accuracy by 25%",
+      "Extended retention policy to 30 days for better context continuity"
+    ]
+  },
+  "name": "product_advisor_agent",
+  "description": "A product recommendation agent that uses semantic memory to learn from customer preferences and provide personalized product suggestions.",
+  "role": "Product Advisor",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.5,
+    "max_tokens": 4096
+  },
+  "owner": "sales-team",
+  "rag": [
+    {
+      "id": "product-catalog-001",
+      "name": "Product Catalog",
+      "rag_type": "doc",
+      "virtual_index_path": "/rags/product-catalog",
+      "location_type": "local",
+      "remote_path": null,
+      "metadata": {}
+    }
+  ],
+  "tools": [
+    {
+      "name": "search_products",
+      "description": "Search for products matching given criteria.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query for products.",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "description": "Product category filter.",
+          "required": false
+        },
+        {
+          "name": "price_range",
+          "type": "string",
+          "description": "Price range filter (e.g., '0-100', '100-500').",
+          "required": false
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "search_products"
+      }
+    },
+    {
+      "name": "get_product_details",
+      "description": "Get detailed information about a specific product.",
+      "parameters": [
+        {
+          "name": "product_id",
+          "type": "string",
+          "description": "The product ID.",
+          "required": true
+        }
+      ],
+      "invocation": {
+        "type": "python_function",
+        "function": "get_product_details"
+      }
+    }
+  ],
+  "memory": {
+    "type": "hybrid",
+    "scope": "user",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "30d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

@@ -5,9 +5,18 @@ This document summarizes the main fields from `schema/agent-definition.schema.js
 ## Agent (root object)
 
 - `id` (string, optional): Unique identifier for this agent (e.g., UUID).
-- `version` (integer, optional): Version number of this specific agent definition.
+- `version` (integer, optional): Version number of this specific agent definition. For semantic versioning, use `version_string`.
+- `version_string` (string, optional): Semantic version string (e.g., '1.2.0') for the agent definition.
+- `lifecycle` (string, optional): Lifecycle status of this agent version. Values: `stable`, `beta`, `deprecated`, `experimental`.
+- `compatibility` (object, optional): Compatibility information for this agent version.
+  - `adl_spec` (string, optional): Minimum ADL spec version required (e.g., '>=1.0.0').
+  - `previous_versions` (array of string, optional): List of compatible previous version patterns.
+- `change_log` (object, optional): Change log information for this version.
+  - `type` (string, **required**): Type of change. Values: `breaking`, `non-breaking`, `patch`.
+  - `summary` (string, optional): Human-readable summary of changes.
+  - `details` (array of string, optional): Detailed list of changes.
 - `name` (string, **required**): Human-readable name of the agent.
-- `description` (string, **required**): Long-form description of the agent’s purpose.
+- `description` (string, **required**): Long-form description of the agent's purpose.
 - `role` (string, **required**): Short role label (e.g., "Creative Producer").
 - `llm` (string, **required**): LLM provider or family (e.g., "openai").
 - `llm_settings` (object, **required**):
@@ -17,6 +26,18 @@ This document summarizes the main fields from `schema/agent-definition.schema.js
 - `document_index_id` (string, optional): Primary RAG index ID.
 - `rag` (array of `RagIndex`, optional): Associated indices.
 - `tools` (array of `ToolDefinition`, **required**): Tools this agent can call.
+- `memory` (object, optional): Memory configuration for the agent.
+  - `type` (string, optional): Type of memory system. Values: `episodic`, `semantic`, `working`, `hybrid`.
+  - `scope` (string, optional): Scope of memory visibility. Values: `session`, `user`, `org`, `global`.
+  - `backend` (string, optional): Backend storage type. Values: `vector`, `kv`, `graph`, `external`.
+  - `retention` (object, optional): Retention policy for memory data.
+    - `policy` (string, **required**): Retention policy type. Values: `ttl`, `versioned`, `append-only`.
+    - `duration` (string, optional): Duration for retention (e.g., '30d', '7d', '1h').
+  - `write_policy` (string, optional): When memory writes occur. Values: `explicit`, `implicit`.
+  - `read_policy` (string, optional): When memory reads occur. Values: `on_demand`, `always`.
+  - `privacy` (object, optional): Privacy and security settings.
+    - `pii` (boolean, optional): Whether memory may contain PII.
+    - `encryption` (boolean, optional): Whether memory data should be encrypted at rest.
 
 ## RagIndex
 
