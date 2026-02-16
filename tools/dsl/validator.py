@@ -205,6 +205,24 @@ class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
             else:
                 value_names.add(value)
 
+            # Validate enum value is a valid string
+            if not isinstance(value, str):
+                self.errors.append(ValidationError(
+                    message=f"Enum value must be a string, got {type(value).__name__}",
+                    location=node.loc,
+                    error_code="INVALID_ENUM_VALUE_TYPE",
+                    category=ErrorCategory.VALIDATION
+                ))
+
+            # Validate enum value follows naming convention (is a valid identifier)
+            if not value.isidentifier():
+                self.errors.append(ValidationError(
+                    message=f"Enum value '{value}' is not a valid identifier",
+                    location=node.loc,
+                    error_code="INVALID_ENUM_VALUE_NAME",
+                    category=ErrorCategory.VALIDATION
+                ))
+
         return self._create_error_summary()
     
     def visit_AgentDef(self, node: AgentDef) -> ValidationErrorSummary:
