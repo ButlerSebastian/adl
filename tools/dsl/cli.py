@@ -106,6 +106,17 @@ def create_parser() -> argparse.ArgumentParser:
         default=2,
         help='Indentation size (default: 2)'
     )
+    format_parser.add_argument(
+        '--max-line-length',
+        type=int,
+        default=100,
+        help='Maximum line length (default: 100)'
+    )
+    format_parser.add_argument(
+        '--trailing-commas',
+        action='store_true',
+        help='Add trailing commas to lists and objects'
+    )
 
     lint_parser = subparsers.add_parser(
         'lint',
@@ -254,7 +265,7 @@ def cmd_validate(args) -> int:
 
 
 def cmd_format(args) -> int:
-    """Format DSL file."""
+    """Format DSL file with configurable options."""
     try:
         with open(args.input, 'r') as f:
             content = f.read()
@@ -272,7 +283,13 @@ def cmd_format(args) -> int:
             if stripped.startswith('}'):
                 indent_level = max(0, indent_level - 1)
 
-            formatted_lines.append(' ' * (indent_level * args.indent) + stripped)
+            indented_line = ' ' * (indent_level * args.indent) + stripped
+
+            if args.trailing_commas and (stripped.endswith(',') or stripped.endswith('{') or stripped.endswith('}')):
+                if not stripped.endswith(',') and not stripped.endswith('{') and not stripped.endswith('}'):
+                    indented_line += ','
+
+            formatted_lines.append(indented_line)
 
             if stripped.endswith('{'):
                 indent_level += 1
