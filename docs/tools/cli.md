@@ -897,3 +897,254 @@ echo "No linting errors found!"
 - **Code Review**: Identify issues early
 - **Refactoring**: Clean up code style
 - **Team Standards**: Enforce naming conventions
+
+---
+
+## adl-generate
+
+Generate code from ADL definitions.
+
+### Usage
+
+```bash
+adl-generate [OPTIONS] INPUT_FILE
+```
+
+### Options
+
+- `-f, --format FORMAT` - Output format: python, typescript, json-schema, openapi (required)
+- `-o, --output FILE` - Output file path (default: stdout)
+- `--package-name NAME` - Package name for generated code
+- `--class-prefix PREFIX` - Prefix for generated classes
+- `--include-docs` - Include documentation in generated code
+- `--no-docs` - Exclude documentation from generated code
+- `--include-validators` - Include validation functions
+- `--no-validators` - Exclude validation functions
+- `-v, --verbose` - Enable verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+#### Generate Python code
+
+```bash
+adl-generate my-agent.adl -f python -o my_agent.py
+```
+
+#### Generate TypeScript code
+
+```bash
+adl-generate my-agent.adl -f typescript -o my_agent.ts
+```
+
+#### Generate JSON Schema
+
+```bash
+adl-generate my-agent.adl -f json-schema -o schema.json
+```
+
+#### Generate OpenAPI specification
+
+```bash
+adl-generate my-agent.adl -f openapi -o openapi.yaml
+```
+
+#### Generate with package name
+
+```bash
+adl-generate my-agent.adl -f python --package-name my_package -o my_agent.py
+```
+
+#### Generate with class prefix
+
+```bash
+adl-generate my-agent.adl -f typescript --class-prefix ADL -o my_agent.ts
+```
+
+#### Generate with documentation
+
+```bash
+adl-generate my-agent.adl -f python --include-docs -o my_agent.py
+```
+
+#### Generate with validators
+
+```bash
+adl-generate my-agent.adl -f python --include-validators -o my_agent.py
+```
+
+### Output Formats
+
+#### Python
+
+Generates Python dataclasses with type hints:
+
+```python
+from typing import List, Optional
+from dataclasses import dataclass
+
+@dataclass
+class CampaignImageGenerator:
+    name: str = "campaign_image_generator"
+    description: str = "Generate a 1024x1024 marketing image from a creative brief."
+    role: str = "Creative Producer"
+    llm: str = "openai"
+    llm_settings: dict = None
+    tools: List[dict] = None
+```
+
+#### TypeScript
+
+Generates TypeScript interfaces:
+
+```typescript
+export interface CampaignImageGenerator {
+  name: string;
+  description: string;
+  role: string;
+  llm: string;
+  llm_settings: {
+    temperature: number;
+    max_tokens: number;
+  };
+  tools: Tool[];
+}
+```
+
+#### JSON Schema
+
+Generates JSON Schema for validation:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Agent name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Agent description"
+    }
+  },
+  "required": ["name", "description"]
+}
+```
+
+#### OpenAPI
+
+Generates OpenAPI specification:
+
+```yaml
+openapi: 3.0.0
+info:
+  title: Campaign Image Generator API
+  version: 1.0.0
+paths:
+  /generate:
+    post:
+      summary: Generate campaign image
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+```
+
+### Output
+
+#### Success
+
+```bash
+adl-generate my-agent.adl -f python -o my_agent.py
+# Generated: my_agent.py
+# Exit code: 0
+```
+
+#### Error
+
+```bash
+adl-generate invalid.adl -f python
+# Error: Parse error at line 5
+# Exit code: 5
+```
+
+#### Verbose Output
+
+```bash
+adl-generate my-agent.adl -f python -v
+# Parsing my-agent.adl...
+# Generating Python code...
+# - Generated 5 classes
+# - Generated 10 functions
+# Generated: my_agent.py
+```
+
+### Exit Codes
+
+- `0` - Generated successfully
+- `1` - Generation error
+- `4` - File not found
+- `5` - Parse error
+
+### Best Practices
+
+1. **Validate before generating** - Ensure ADL is valid
+2. **Use appropriate format** - Match your target platform
+3. **Include documentation** - For better code readability
+4. **Include validators** - For runtime validation
+5. **Version control generated code** - Track changes
+
+### Use Cases
+
+- **Python Projects**: Generate type-safe Python code
+- **TypeScript Projects**: Generate TypeScript interfaces
+- **API Documentation**: Generate OpenAPI specs
+- **Validation**: Generate JSON schemas
+- **Code Generation**: Automate boilerplate code
+
+### Advanced Usage
+
+#### Generate Multiple Formats
+
+```bash
+adl-generate my-agent.adl -f python -o my_agent.py
+adl-generate my-agent.adl -f typescript -o my_agent.ts
+adl-generate my-agent.adl -f json-schema -o schema.json
+```
+
+#### Generate with Custom Package
+
+```bash
+adl-generate my-agent.adl -f python --package-name myapp.models -o models.py
+```
+
+#### Generate for Multiple Agents
+
+```bash
+for file in agents/*.adl; do
+    name=$(basename "$file" .adl)
+    adl-generate "$file" -f python -o "generated/${name}.py"
+done
+```
+
+---
+
+## Summary
+
+The ADL CLI provides a comprehensive toolchain for working with Agent Definition Language files:
+
+| Command | Purpose |
+|---------|---------|
+| `adl-compile` | Compile ADL to various formats |
+| `adl-validate` | Validate ADL against schema |
+| `adl-format` | Format ADL files |
+| `adl-lint` | Lint ADL for code quality |
+| `adl-generate` | Generate code from ADL |
+
+For more information, see:
+- [ADL DSL Design](../adl-dsl-design.md)
+- [Examples](../../examples/)
+- [Schema Reference](../schema-reference.md)
