@@ -21,7 +21,12 @@
     },
     "lifecycle": {
       "type": "string",
-      "enum": ["stable", "beta", "deprecated", "experimental"],
+      "enum": [
+        "stable",
+        "beta",
+        "deprecated",
+        "experimental"
+      ],
       "description": "Lifecycle status of this agent version."
     },
     "compatibility": {
@@ -49,7 +54,11 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["breaking", "non-breaking", "patch"],
+          "enum": [
+            "breaking",
+            "non-breaking",
+            "patch"
+          ],
           "description": "Type of change in this version."
         },
         "summary": {
@@ -64,7 +73,9 @@
           "description": "Detailed list of changes."
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "name": {
       "type": "string",
@@ -84,14 +95,24 @@
       "properties": {
         "primary_role": {
           "type": "string",
-          "enum": ["coordinator", "worker", "supervisor", "critic"],
+          "enum": [
+            "coordinator",
+            "worker",
+            "supervisor",
+            "critic"
+          ],
           "description": "Primary role for this agent in multi-agent coordination."
         },
         "secondary_roles": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["coordinator", "worker", "supervisor", "critic"]
+            "enum": [
+              "coordinator",
+              "worker",
+              "supervisor",
+              "critic"
+            ]
           },
           "maxItems": 2,
           "description": "Optional secondary roles for this agent. Maximum 2 secondary roles allowed."
@@ -108,7 +129,13 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["management", "coordination", "execution", "validation", "advisory"],
+                "enum": [
+                  "management",
+                  "coordination",
+                  "execution",
+                  "validation",
+                  "advisory"
+                ],
                 "description": "Type of capability."
               },
               "scope": {
@@ -122,12 +149,20 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["coordinator", "worker", "supervisor", "critic"]
+                  "enum": [
+                    "coordinator",
+                    "worker",
+                    "supervisor",
+                    "critic"
+                  ]
                 },
                 "description": "Target roles this capability can operate on."
               }
             },
-            "required": ["name", "type"]
+            "required": [
+              "name",
+              "type"
+            ]
           },
           "description": "List of capabilities for this role."
         },
@@ -152,7 +187,12 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["coordinator", "worker", "supervisor", "critic"]
+                "enum": [
+                  "coordinator",
+                  "worker",
+                  "supervisor",
+                  "critic"
+                ]
               },
               "description": "Roles this agent must report to."
             },
@@ -160,7 +200,11 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["direct", "broadcast", "pubsub"]
+                "enum": [
+                  "direct",
+                  "broadcast",
+                  "pubsub"
+                ]
               },
               "description": "Communication channels this agent can use."
             }
@@ -173,14 +217,22 @@
           "properties": {
             "message_format": {
               "type": "string",
-              "enum": ["json", "protobuf", "avro"],
+              "enum": [
+                "json",
+                "protobuf",
+                "avro"
+              ],
               "description": "Message format for communication."
             },
             "channels": {
               "type": "array",
               "items": {
                 "type": "string",
-                "enum": ["direct", "broadcast", "pubsub"]
+                "enum": [
+                  "direct",
+                  "broadcast",
+                  "pubsub"
+                ]
               },
               "description": "Available communication channels."
             },
@@ -195,7 +247,12 @@
                 },
                 "priority": {
                   "type": "string",
-                  "enum": ["low", "medium", "high", "critical"],
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
                   "description": "Priority level for messages."
                 }
               },
@@ -211,7 +268,11 @@
                 },
                 "retry_policy": {
                   "type": "string",
-                  "enum": ["none", "fixed", "exponential_backoff"],
+                  "enum": [
+                    "none",
+                    "fixed",
+                    "exponential_backoff"
+                  ],
                   "description": "Retry policy for failed messages."
                 }
               },
@@ -221,7 +282,9 @@
           "description": "Communication protocol configuration."
         }
       },
-      "required": ["primary_role"]
+      "required": [
+        "primary_role"
+      ]
     },
     "llm": {
       "type": "string",
@@ -243,7 +306,10 @@
           "description": "Maximum tokens to generate in a single completion."
         }
       },
-      "required": ["temperature", "max_tokens"]
+      "required": [
+        "temperature",
+        "max_tokens"
+      ]
     },
     "owner": {
       "type": "string",
@@ -272,7 +338,7 @@
     },
     "execution_constraints": {
       "type": "object",
-      "description": "Execution constraints and capability negotiation for v2 agents. Defines time, memory, resource, cost, and security constraints.",
+      "description": "Execution constraints and capability negotiation.",
       "additionalProperties": false,
       "properties": {
         "time_constraints": {
@@ -296,7 +362,11 @@
             },
             "timeout_action": {
               "type": "string",
-              "enum": ["terminate", "continue", "warn"],
+              "enum": [
+                "terminate",
+                "continue",
+                "warn"
+              ],
               "description": "Action to take on timeout."
             }
           },
@@ -323,7 +393,11 @@
             },
             "memory_eviction_policy": {
               "type": "string",
-              "enum": ["lru", "fifo", "random"],
+              "enum": [
+                "lru",
+                "fifo",
+                "random"
+              ],
               "description": "Policy for memory eviction."
             }
           },
@@ -429,7 +503,11 @@
             },
             "protocol": {
               "type": "string",
-              "enum": ["handshake", "discovery", "declaration"],
+              "enum": [
+                "handshake",
+                "discovery",
+                "declaration"
+              ],
               "description": "Negotiation protocol type."
             },
             "timeout_ms": {
@@ -439,7 +517,11 @@
             },
             "fallback_strategy": {
               "type": "string",
-              "enum": ["degrade", "fail", "warn"],
+              "enum": [
+                "degrade",
+                "fail",
+                "warn"
+              ],
               "description": "Fallback strategy if negotiation fails."
             }
           },
@@ -468,7 +550,9 @@
                     "description": "Required provider (optional)."
                   }
                 },
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               },
               "description": "Required capabilities."
             },
@@ -487,7 +571,9 @@
                     "description": "Required version (e.g., '>=1.0.0')."
                   }
                 },
-                "required": ["name"]
+                "required": [
+                  "name"
+                ]
               },
               "description": "Optional capabilities."
             }
@@ -500,12 +586,20 @@
           "properties": {
             "level": {
               "type": "string",
-              "enum": ["strict", "moderate", "lenient"],
+              "enum": [
+                "strict",
+                "moderate",
+                "lenient"
+              ],
               "description": "Enforcement level."
             },
             "violation_action": {
               "type": "string",
-              "enum": ["terminate", "continue", "degrade"],
+              "enum": [
+                "terminate",
+                "continue",
+                "degrade"
+              ],
               "description": "Action on constraint violation."
             },
             "logging_enabled": {
@@ -519,12 +613,11 @@
           },
           "description": "Constraint enforcement configuration."
         }
-      },
-      "description": "Execution constraints and capability negotiation."
+      }
     },
     "events": {
       "type": "object",
-      "description": "Event-driven tool invocation configuration for v2 agents. Defines triggers, handlers, subscriptions, and routing.",
+      "description": "Event-driven tool invocation configuration.",
       "additionalProperties": false,
       "properties": {
         "triggers": {
@@ -535,7 +628,12 @@
             "properties": {
               "trigger_type": {
                 "type": "string",
-                "enum": ["event", "time", "condition", "composite"],
+                "enum": [
+                  "event",
+                  "time",
+                  "condition",
+                  "composite"
+                ],
                 "description": "Type of trigger."
               },
               "event_name": {
@@ -552,7 +650,13 @@
                   },
                   "operator": {
                     "type": "string",
-                    "enum": ["equals", "not_equals", "greater_than", "less_than", "contains"],
+                    "enum": [
+                      "equals",
+                      "not_equals",
+                      "greater_than",
+                      "less_than",
+                      "contains"
+                    ],
                     "description": "Comparison operator."
                   },
                   "value": {
@@ -567,7 +671,10 @@
               },
               "operator": {
                 "type": "string",
-                "enum": ["and", "or"],
+                "enum": [
+                  "and",
+                  "or"
+                ],
                 "description": "Operator for composite triggers."
               },
               "triggers": {
@@ -587,7 +694,12 @@
             "properties": {
               "handler_type": {
                 "type": "string",
-                "enum": ["tool_invocation", "state_update", "notification", "custom"],
+                "enum": [
+                  "tool_invocation",
+                  "state_update",
+                  "notification",
+                  "custom"
+                ],
                 "description": "Type of handler."
               },
               "tool_name": {
@@ -607,7 +719,12 @@
               },
               "notification_type": {
                 "type": "string",
-                "enum": ["alert", "info", "warning", "error"],
+                "enum": [
+                  "alert",
+                  "info",
+                  "warning",
+                  "error"
+                ],
                 "description": "Type of notification."
               },
               "message": {
@@ -631,7 +748,11 @@
             "properties": {
               "subscription_type": {
                 "type": "string",
-                "enum": ["direct", "pattern", "filtered"],
+                "enum": [
+                  "direct",
+                  "pattern",
+                  "filtered"
+                ],
                 "description": "Type of subscription."
               },
               "event_name": {
@@ -657,12 +778,20 @@
         },
         "routing_strategy": {
           "type": "string",
-          "enum": ["direct", "broadcast", "conditional"],
+          "enum": [
+            "direct",
+            "broadcast",
+            "conditional"
+          ],
           "description": "Event routing strategy."
         },
         "processing_mode": {
           "type": "string",
-          "enum": ["synchronous", "asynchronous", "batch"],
+          "enum": [
+            "synchronous",
+            "asynchronous",
+            "batch"
+          ],
           "description": "Event processing mode."
         },
         "persistence": {
@@ -671,7 +800,11 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["memory", "file", "database"],
+              "enum": [
+                "memory",
+                "file",
+                "database"
+              ],
               "description": "Type of persistence."
             },
             "max_events": {
@@ -685,7 +818,11 @@
             },
             "rotation": {
               "type": "string",
-              "enum": ["daily", "weekly", "monthly"],
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ],
               "description": "Log rotation policy."
             },
             "connection_string": {
@@ -699,12 +836,11 @@
           },
           "description": "Event persistence configuration."
         }
-      },
-      "description": "Event-driven tool invocation configuration."
+      }
     },
     "rag_extensions": {
       "type": "object",
-      "description": "Advanced RAG extensions for v2 agents. Includes hierarchical indexing, hybrid search, and advanced filtering.",
+      "description": "Advanced RAG extensions configuration.",
       "additionalProperties": false,
       "properties": {
         "rag_hierarchy": {
@@ -731,11 +867,19 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["vector", "keyword", "hybrid"],
+                    "enum": [
+                      "vector",
+                      "keyword",
+                      "hybrid"
+                    ],
                     "description": "Index type."
                   }
                 },
-                "required": ["name", "parent", "type"]
+                "required": [
+                  "name",
+                  "parent",
+                  "type"
+                ]
               },
               "description": "Sub-indices in the hierarchy."
             }
@@ -764,7 +908,11 @@
                 },
                 "similarity_metric": {
                   "type": "string",
-                  "enum": ["cosine", "euclidean", "dot"],
+                  "enum": [
+                    "cosine",
+                    "euclidean",
+                    "dot"
+                  ],
                   "description": "Similarity metric."
                 },
                 "top_k": {
@@ -791,7 +939,10 @@
                 },
                 "algorithm": {
                   "type": "string",
-                  "enum": ["bm25", "tfidf"],
+                  "enum": [
+                    "bm25",
+                    "tfidf"
+                  ],
                   "description": "Keyword search algorithm."
                 },
                 "top_k": {
@@ -810,7 +961,11 @@
             },
             "fusion_method": {
               "type": "string",
-              "enum": ["rrf", "weighted", "concat"],
+              "enum": [
+                "rrf",
+                "weighted",
+                "concat"
+              ],
               "description": "Fusion method for combining results."
             },
             "vector_weight": {
@@ -872,7 +1027,12 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["hybrid", "rerank", "deduplicate", "filter"],
+                    "enum": [
+                      "hybrid",
+                      "rerank",
+                      "deduplicate",
+                      "filter"
+                    ],
                     "description": "Stage type."
                   },
                   "config": {
@@ -880,7 +1040,10 @@
                     "description": "Stage configuration."
                   }
                 },
-                "required": ["name", "type"]
+                "required": [
+                  "name",
+                  "type"
+                ]
               },
               "description": "Pipeline stages."
             },
@@ -896,12 +1059,11 @@
           },
           "description": "RAG pipeline configuration."
         }
-      },
-      "description": "Advanced RAG extensions configuration."
+      }
     },
     "memory_extensions": {
       "type": "object",
-      "description": "Memory extensions for v2 agents. Includes episodic, semantic, and working memory with lifecycle management.",
+      "description": "Memory extensions configuration.",
       "additionalProperties": false,
       "properties": {
         "episodic": {
@@ -914,7 +1076,11 @@
             },
             "backend": {
               "type": "string",
-              "enum": ["vector", "graph", "keyvalue"],
+              "enum": [
+                "vector",
+                "graph",
+                "keyvalue"
+              ],
               "description": "Storage backend."
             },
             "max_episodes": {
@@ -924,7 +1090,11 @@
             },
             "retention_policy": {
               "type": "string",
-              "enum": ["importance_based", "usage_based", "ttl"],
+              "enum": [
+                "importance_based",
+                "usage_based",
+                "ttl"
+              ],
               "description": "Retention policy."
             },
             "compression": {
@@ -944,7 +1114,11 @@
             },
             "backend": {
               "type": "string",
-              "enum": ["vector", "graph", "keyvalue"],
+              "enum": [
+                "vector",
+                "graph",
+                "keyvalue"
+              ],
               "description": "Storage backend."
             },
             "max_concepts": {
@@ -954,7 +1128,11 @@
             },
             "retention_policy": {
               "type": "string",
-              "enum": ["importance_based", "usage_based", "ttl"],
+              "enum": [
+                "importance_based",
+                "usage_based",
+                "ttl"
+              ],
               "description": "Retention policy."
             },
             "knowledge_graph": {
@@ -979,7 +1157,11 @@
             },
             "retention_policy": {
               "type": "string",
-              "enum": ["session", "task", "indefinite"],
+              "enum": [
+                "session",
+                "task",
+                "indefinite"
+              ],
               "description": "Retention policy."
             },
             "auto_clear": {
@@ -1017,7 +1199,12 @@
               "properties": {
                 "policy": {
                   "type": "string",
-                  "enum": ["lru", "lfu", "importance", "ttl"],
+                  "enum": [
+                    "lru",
+                    "lfu",
+                    "importance",
+                    "ttl"
+                  ],
                   "description": "Eviction policy."
                 },
                 "check_interval_ms": {
@@ -1043,7 +1230,11 @@
                 },
                 "strategy": {
                   "type": "string",
-                  "enum": ["temporal", "semantic", "hierarchical"],
+                  "enum": [
+                    "temporal",
+                    "semantic",
+                    "hierarchical"
+                  ],
                   "description": "Consolidation strategy."
                 },
                 "interval_hours": {
@@ -1075,7 +1266,11 @@
                 },
                 "redaction_method": {
                   "type": "string",
-                  "enum": ["mask", "remove", "hash"],
+                  "enum": [
+                    "mask",
+                    "remove",
+                    "hash"
+                  ],
                   "description": "Redaction method."
                 },
                 "pii_types": {
@@ -1098,7 +1293,11 @@
                 },
                 "algorithm": {
                   "type": "string",
-                  "enum": ["aes-256", "aes-128", "chacha20"],
+                  "enum": [
+                    "aes-256",
+                    "aes-128",
+                    "chacha20"
+                  ],
                   "description": "Encryption algorithm."
                 },
                 "key_rotation_days": {
@@ -1120,12 +1319,11 @@
           },
           "description": "Privacy configuration."
         }
-      },
-      "description": "Memory extensions configuration."
+      }
     },
     "llm_extensions": {
       "type": "object",
-      "description": "LLM settings extensions for v2 agents. Includes multi-model support, routing, and constraints.",
+      "description": "LLM settings extensions configuration.",
       "additionalProperties": false,
       "properties": {
         "primary_model": {
@@ -1149,7 +1347,10 @@
               "description": "API endpoint."
             }
           },
-          "required": ["provider", "model"],
+          "required": [
+            "provider",
+            "model"
+          ],
           "description": "Primary model configuration."
         },
         "fallback_models": {
@@ -1175,12 +1376,21 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["timeout", "rate_limit", "error", "unavailable"]
+                  "enum": [
+                    "timeout",
+                    "rate_limit",
+                    "error",
+                    "unavailable"
+                  ]
                 },
                 "description": "Conditions that trigger fallback."
               }
             },
-            "required": ["provider", "model", "priority"],
+            "required": [
+              "provider",
+              "model",
+              "priority"
+            ],
             "description": "Fallback model configuration."
           },
           "description": "Fallback models configuration."
@@ -1216,7 +1426,12 @@
                 "description": "Cost multiplier for this model."
               }
             },
-            "required": ["name", "provider", "model", "task_types"],
+            "required": [
+              "name",
+              "provider",
+              "model",
+              "task_types"
+            ],
             "description": "Specialized model configuration."
           },
           "description": "Specialized models configuration."
@@ -1227,12 +1442,22 @@
           "properties": {
             "strategy": {
               "type": "string",
-              "enum": ["direct", "task_based", "cost_based", "performance_based", "adaptive"],
+              "enum": [
+                "direct",
+                "task_based",
+                "cost_based",
+                "performance_based",
+                "adaptive"
+              ],
               "description": "Routing strategy."
             },
             "default_model": {
               "type": "string",
-              "enum": ["primary", "fallback", "specialized"],
+              "enum": [
+                "primary",
+                "fallback",
+                "specialized"
+              ],
               "description": "Default model to use."
             },
             "task_mappings": {
@@ -1354,7 +1579,11 @@
                 },
                 "backoff_strategy": {
                   "type": "string",
-                  "enum": ["none", "fixed", "exponential_backoff"],
+                  "enum": [
+                    "none",
+                    "fixed",
+                    "exponential_backoff"
+                  ],
                   "description": "Backoff strategy for rate limits."
                 }
               },
@@ -1376,7 +1605,11 @@
                 },
                 "timeout_action": {
                   "type": "string",
-                  "enum": ["terminate", "fallback", "continue"],
+                  "enum": [
+                    "terminate",
+                    "fallback",
+                    "continue"
+                  ],
                   "description": "Action on timeout."
                 }
               },
@@ -1409,8 +1642,60 @@
           },
           "description": "Model monitoring configuration."
         }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "description": "Workflow and DAG definitions for multi-agent orchestration. Enables complex multi-step workflows with dependencies, parallel execution, and conditional branching.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique workflow identifier."
+        },
+        "name": {
+          "type": "string",
+          "description": "Workflow name."
+        },
+        "version": {
+          "type": "string",
+          "description": "Workflow version (semantic versioning).",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Workflow description."
+        },
+        "schedule": {
+          "type": "string",
+          "description": "Cron schedule for automated execution."
+        },
+        "nodes": {
+          "type": "object",
+          "description": "Workflow nodes (steps/tasks).",
+          "additionalProperties": {
+            "$ref": "#/$defs/WorkflowNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "description": "Workflow edges (connections between nodes).",
+          "items": {
+            "$ref": "#/$defs/WorkflowEdge"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional workflow metadata."
+        }
       },
-      "description": "LLM settings extensions configuration."
+      "required": [
+        "id",
+        "name",
+        "version",
+        "nodes",
+        "edges"
+      ]
     }
   },
   "required": [
@@ -1420,5 +1705,106 @@
     "llm",
     "llm_settings",
     "tools"
-  ]
+  ],
+  "$defs": {
+    "WorkflowNode": {
+      "type": "object",
+      "description": "A workflow node representing a step or task.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique node identifier."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "trigger",
+            "input",
+            "transform",
+            "action",
+            "condition",
+            "loop",
+            "output",
+            "sub_workflow",
+            "annotation"
+          ],
+          "description": "Node type."
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable node label."
+        },
+        "config": {
+          "type": "object",
+          "description": "Node configuration."
+        },
+        "position": {
+          "type": "object",
+          "description": "Node position for visualization.",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional node metadata."
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "label"
+      ]
+    },
+    "WorkflowEdge": {
+      "type": "object",
+      "description": "A workflow edge representing a connection between nodes.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique edge identifier."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source node ID."
+        },
+        "target": {
+          "type": "string",
+          "description": "Target node ID."
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "data_flow",
+            "control_flow",
+            "error_flow",
+            "ai_languageModel",
+            "ai_tool",
+            "dependency"
+          ],
+          "description": "Edge relation type."
+        },
+        "condition": {
+          "type": "string",
+          "description": "Conditional expression for edge traversal."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional edge metadata."
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "target"
+      ]
+    }
+  }
 }
