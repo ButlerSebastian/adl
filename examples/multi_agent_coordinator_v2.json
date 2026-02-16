@@ -1,0 +1,192 @@
+{
+  "id": "multi-agent-coordinator-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Research Team Coordinator",
+  "description": "Coordinator agent for managing multi-agent research team with task delegation and result aggregation.",
+  "role": "Multi-Agent Team",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 4096
+  },
+  "agent_roles": {
+    "primary_role": "coordinator",
+    "secondary_roles": [],
+    "capabilities": [
+      {
+        "name": "agent_lifecycle_management",
+        "type": "management",
+        "scope": ["start", "stop", "restart"],
+        "targets": ["worker", "supervisor", "critic"]
+      },
+      {
+        "name": "task_delegation",
+        "type": "coordination",
+        "scope": ["assign", "reassign", "cancel"],
+        "targets": ["worker"]
+      },
+      {
+        "name": "result_aggregation",
+        "type": "coordination",
+        "scope": ["aggregate", "summarize"],
+        "targets": ["worker", "supervisor"]
+      }
+    ],
+    "constraints": {
+      "max_coordinators": 1,
+      "can_execute_tasks": false,
+      "can_modify_configuration": true,
+      "must_report_to": [],
+      "communication_channels": ["direct", "broadcast", "pubsub"]
+    },
+    "communication_protocols": {
+      "message_format": "json",
+      "channels": ["direct", "broadcast", "pubsub"],
+      "latency_requirements": {
+        "max_latency_ms": 100,
+        "priority": "high"
+      },
+      "reliability": {
+        "ack_required": true,
+        "retry_policy": "exponential_backoff"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "delegate_task",
+      "description": "Delegate a task to a specific worker agent.",
+      "category": "workflow.task_management",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "string",
+          "description": "Unique identifier for the task.",
+          "required": true
+        },
+        {
+          "name": "target_agent",
+          "type": "string",
+          "description": "Target agent ID to delegate the task to.",
+          "required": true
+        },
+        {
+          "name": "task_description",
+          "type": "string",
+          "description": "Description of the task to delegate.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Status of task delegation.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            },
+            "task_id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "aggregate_results",
+      "description": "Aggregate results from multiple worker agents.",
+      "category": "workflow.result_management",
+      "parameters": [
+        {
+          "name": "result_ids",
+          "type": "array",
+          "description": "List of result identifiers to aggregate.",
+          "required": true
+        },
+        {
+          "name": "aggregation_type",
+          "type": "string",
+          "description": "Type of aggregation (merge, summarize, average).",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Aggregated results.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "aggregated_data": {
+              "type": "object"
+            },
+            "summary": {
+              "type": "string"
+            },
+            "source_count": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "monitor_progress",
+      "description": "Monitor progress of all active tasks.",
+      "category": "workflow.monitoring",
+      "parameters": [
+        {
+          "name": "task_ids",
+          "type": "array",
+          "description": "List of task IDs to monitor (empty for all tasks).",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Progress status of tasks.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "task_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "progress": {
+                "type": "number"
+              },
+              "assigned_agent": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

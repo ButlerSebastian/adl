@@ -1,0 +1,226 @@
+{
+  "id": "multi-agent-worker-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Research Data Worker",
+  "description": "Worker agent for executing data collection and analysis tasks in multi-agent research team.",
+  "role": "Multi-Agent Team",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.5,
+    "max_tokens": 2048
+  },
+  "agent_roles": {
+    "primary_role": "worker",
+    "secondary_roles": [],
+    "capabilities": [
+      {
+        "name": "tool_invocation",
+        "type": "execution",
+        "scope": ["execute", "monitor"],
+        "targets": []
+      },
+      {
+        "name": "data_processing",
+        "type": "execution",
+        "scope": ["process", "transform", "analyze"],
+        "targets": []
+      },
+      {
+        "name": "result_reporting",
+        "type": "execution",
+        "scope": ["report", "submit"],
+        "targets": ["coordinator", "supervisor"]
+      }
+    ],
+    "constraints": {
+      "max_coordinators": 1,
+      "can_execute_tasks": true,
+      "can_modify_configuration": false,
+      "must_report_to": ["coordinator"],
+      "communication_channels": ["direct"]
+    },
+    "communication_protocols": {
+      "message_format": "json",
+      "channels": ["direct"],
+      "latency_requirements": {
+        "max_latency_ms": 500,
+        "priority": "medium"
+      },
+      "reliability": {
+        "ack_required": true,
+        "retry_policy": "fixed"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "search_web",
+      "description": "Search the web for information.",
+      "category": "data_access.web_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of results to return.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read_document",
+      "description": "Read and extract content from a document.",
+      "category": "data_access.document_processing",
+      "parameters": [
+        {
+          "name": "document_url",
+          "type": "string",
+          "description": "URL of the document to read.",
+          "required": true
+        },
+        {
+          "name": "extract_fields",
+          "type": "array",
+          "description": "Fields to extract from the document.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Extracted document content.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            },
+            "extracted_fields": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "extract_data",
+      "description": "Extract structured data from unstructured text.",
+      "category": "data_processing.extraction",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text to extract data from.",
+          "required": true
+        },
+        {
+          "name": "extraction_schema",
+          "type": "object",
+          "description": "Schema defining what data to extract.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Extracted structured data.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "extracted_data": {
+              "type": "object"
+            },
+            "confidence": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "report_result",
+      "description": "Report task result to coordinator.",
+      "category": "workflow.reporting",
+      "parameters": [
+        {
+          "name": "task_id",
+          "type": "string",
+          "description": "Task ID this result is for.",
+          "required": true
+        },
+        {
+          "name": "result_data",
+          "type": "object",
+          "description": "Result data to report.",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "description": "Task status (completed, failed, in_progress).",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Status of result reporting.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "3d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}
