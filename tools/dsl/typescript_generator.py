@@ -4,11 +4,13 @@ TypeScript Code Generator for ADL DSL
 This module generates TypeScript type definitions from ADL DSL ASTs.
 """
 
-from typing import List
+from typing import List, Dict, Any
 from .ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
-    PrimitiveType, OptionalType, ASTVisitor
+    PrimitiveType, OptionalType, ASTVisitor,
+    WorkflowDef, WorkflowNodeDef, WorkflowEdgeDef,
+    PolicyDef, EnforcementDef
 )
 
 
@@ -59,6 +61,8 @@ class TypeScriptGenerator(ASTVisitor[str]):
 
     def visit_TypeDef(self, node: TypeDef) -> str:
         """Generate TypeScript interface from a type definition."""
+        if not node.body:
+            return f"export interface {node.name} {{}}"
         fields = []
         for field in node.body.fields:
             field_type = field.type.accept(self)
@@ -140,3 +144,77 @@ class TypeScriptGenerator(ASTVisitor[str]):
     def visit_FieldList(self, node) -> str:
         """Visit field list node."""
         return ""
+
+    # Phase 4: Workflow and Policy visitor methods
+    def visit_WorkflowDef(self, node: WorkflowDef) -> str:
+        """Generate TypeScript interface for workflow definition."""
+        # Generate nested interfaces first
+        node_interface = self.visit_WorkflowNodeDef(node.nodes["input-node"])
+        edge_interface = self.visit_WorkflowEdgeDef(node.edges[0])
+
+        # Generate workflow interface
+        fields = [
+            f"  id: string;",
+            f"  name: string;",
+            f"  version: string;",
+            f"  description: string;",
+            f"  nodes: Record<string, WorkflowNode>;",
+            f"  edges: WorkflowEdge[];",
+            f"  metadata?: Record<string, any>;"
+        ]
+        fields_str = "\n".join(fields)
+        return f"{node_interface}\n\n{edge_interface}\n\nexport interface Workflow {{\n{fields_str}\n}}"
+
+    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> str:
+        """Generate TypeScript interface for workflow node."""
+        fields = [
+            f"  id: string;",
+            f"  type: string;",
+            f"  label: string;",
+            f"  config: Record<string, any>;",
+            f"  position: {{ x: number; y: number }};"
+        ]
+        fields_str = "\n".join(fields)
+        return f"export interface WorkflowNode {{\n{fields_str}\n}}"
+
+    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> str:
+        """Generate TypeScript interface for workflow edge."""
+        fields = [
+            f"  id: string;",
+            f"  source: string;",
+            f"  target: string;",
+            f"  relation: string;",
+            f"  condition?: Record<string, any>;",
+            f"  metadata?: Record<string, any>;"
+        ]
+        fields_str = "\n".join(fields)
+        return f"export interface WorkflowEdge {{\n{fields_str}\n}}"
+
+    def visit_PolicyDef(self, node: PolicyDef) -> str:
+        """Generate TypeScript interface for policy definition."""
+        # Generate enforcement interface first
+        enforcement_interface = self.visit_EnforcementDef(node.enforcement)
+
+        # Generate policy interface
+        fields = [
+            f"  id: string;",
+            f"  name: string;",
+            f"  version: string;",
+            f"  description: string;",
+            f"  rego: string;",
+            f"  enforcement: Enforcement;",
+            f"  data: Record<string, any>;",
+            f"  metadata?: Record<string, any>;"
+        ]
+        fields_str = "\n".join(fields)
+        return f"{enforcement_interface}\n\nexport interface Policy {{\n{fields_str}\n}}"
+
+    def visit_EnforcementDef(self, node: EnforcementDef) -> str:
+        """Generate TypeScript interface for enforcement settings."""
+        fields = [
+            f"  mode: 'strict' | 'moderate' | 'lenient';",
+            f"  action: 'deny' | 'warn' | 'log' | 'allow';",
+            f"  audit_log: boolean;"
+        ]
+        fields_str = "\n".join(fields)
+        return f"export interface Enforcement {{\n{fields_str}\n}}"

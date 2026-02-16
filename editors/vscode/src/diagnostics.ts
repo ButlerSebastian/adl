@@ -25,6 +25,12 @@ export class ADLDiagnosticsProvider {
 
             const validationErrors = this.detectValidationErrors(content, document);
             diagnostics.push(...validationErrors);
+
+            const workflowErrors = this.detectWorkflowValidation(content, document);
+            diagnostics.push(...workflowErrors);
+
+            const policyErrors = this.detectPolicyValidation(content, document);
+            diagnostics.push(...policyErrors);
         } catch (error) {
             this.outputChannel.appendLine(`Error during diagnostics: ${error}`);
         }
@@ -153,6 +159,533 @@ export class ADLDiagnosticsProvider {
         }
 
         return diagnostics;
+    }
+
+    private detectWorkflowValidation(content: string, document: vscode.TextDocument): vscode.Diagnostic[] {
+        const diagnostics: vscode.Diagnostic[] = [];
+        const lines = content.split('\n');
+
+        try {
+            const workflow = this.parseJSON(content);
+            if (!workflow || !workflow.workflow) {
+                return diagnostics;
+            }
+
+            const workflowData = workflow.workflow;
+
+            // Validate required fields
+            const requiredFields = ['id', 'name', 'version', 'nodes', 'edges'];
+            for (const field of requiredFields) {
+                if (!(field in workflowData)) {
+                    const range = this.findFieldRange(content, 'workflow', field);
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            `Workflow must have a '${field}' field`,
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                }
+            }
+
+            // Validate version format
+            if ('version' in workflowData) {
+                const version = workflowData.version;
+                if (typeof version !== 'string') {
+                    const range = this.findFieldRange(content, 'workflow', 'version');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Version must be a string',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else if (!this.isSemanticVersion(version)) {
+                    const range = this.findFieldRange(content, 'workflow', 'version');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            `Version must follow semantic versioning (e.g., '1.0.0'), got '${version}'`,
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                }
+            }
+
+            // Validate nodes
+            if ('nodes' in workflowData) {
+                const nodes = workflowData.nodes;
+                if (!nodes || typeof nodes !== 'object') {
+                    const range = this.findFieldRange(content, 'workflow', 'nodes');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Nodes must be an object',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else if (Object.keys(nodes).length === 0) {
+                    const range = this.findFieldRange(content, 'workflow', 'nodes');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Workflow must have at least one node',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else {
+                    const nodeIds = new Set<string>();
+                    for (const [nodeId, node] of Object.entries(nodes)) {
+                        if (typeof node !== 'object') {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId);
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Node '${nodeId}' must be an object`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                            continue;
+                        }
+
+                        // Check for duplicate IDs
+                        if (nodeIds.has(nodeId)) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId);
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Duplicate node ID: '${nodeId}'`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                        nodeIds.add(nodeId);
+
+                        // Validate node structure
+                        if (!('id' in node)) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Node '${nodeId}' must have an 'id' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        if (!('type' in node)) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'type');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Node '${nodeId}' must have a 'type' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        } else {
+                            const nodeType = node.type;
+                            const validNodeTypes = ['trigger', 'input', 'transform', 'action', 'condition', 'loop', 'output', 'sub_workflow', 'annotation'];
+                            if (!validNodeTypes.includes(nodeType)) {
+                                const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'type');
+                                if (range) {
+                                    diagnostics.push(new vscode.Diagnostic(
+                                        range,
+                                        `Invalid node type: '${nodeType}'. Must be one of ${validNodeTypes.join(', ')}`,
+                                        vscode.DiagnosticSeverity.Error
+                                    ));
+                                }
+                            }
+                        }
+
+                        if (!('label' in node)) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'label');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Node '${nodeId}' must have a 'label' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Validate edges
+            if ('edges' in workflowData) {
+                const edges = workflowData.edges;
+                if (!Array.isArray(edges)) {
+                    const range = this.findFieldRange(content, 'workflow', 'edges');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Edges must be an array',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else if (edges.length === 0) {
+                    const range = this.findFieldRange(content, 'workflow', 'edges');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Workflow must have at least one edge',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else {
+                    const edgeIds = new Set<string>();
+                    for (let i = 0; i < edges.length; i++) {
+                        const edge = edges[i];
+                        if (typeof edge !== 'object') {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i);
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Edge at index ${i} must be an object`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                            continue;
+                        }
+
+                        // Check for duplicate IDs
+                        const edgeId = edge.id;
+                        if (edgeId && edgeIds.has(edgeId)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Duplicate edge ID: '${edgeId}'`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                        if (edgeId) {
+                            edgeIds.add(edgeId);
+                        }
+
+                        // Validate edge structure
+                        if (!('id' in edge)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Edge at index ${i} must have an 'id' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        if (!('source' in edge)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'source');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Edge at index ${i} must have a 'source' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        if (!('target' in edge)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'target');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Edge at index ${i} must have a 'target' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        // Validate relation if present
+                        if ('relation' in edge) {
+                            const relation = edge.relation;
+                            const validRelations = ['data_flow', 'control_flow', 'error_flow', 'ai_languageModel', 'ai_tool', 'dependency'];
+                            if (!validRelations.includes(relation)) {
+                                const range = this.findFieldRange(content, 'workflow', 'edges', i, 'relation');
+                                if (range) {
+                                    diagnostics.push(new vscode.Diagnostic(
+                                        range,
+                                        `Invalid edge relation: '${relation}'. Must be one of ${validRelations.join(', ')}`,
+                                        vscode.DiagnosticSeverity.Error
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Detect cycles (basic check)
+            if ('nodes' in workflowData && 'edges' in workflowData) {
+                const nodes = workflowData.nodes;
+                const edges = workflowData.edges;
+
+                if (nodes && edges && Object.keys(nodes).length > 0 && edges.length > 0) {
+                    const nodeIds = new Set(Object.keys(nodes));
+                    const adjacency = new Map<string, string[]>();
+
+                    for (const edge of edges) {
+                        const source = edge.source;
+                        const target = edge.target;
+                        if (source && target && nodeIds.has(source) && nodeIds.has(target)) {
+                            if (!adjacency.has(source)) {
+                                adjacency.set(source, []);
+                            }
+                            adjacency.get(source)!.push(target);
+                        }
+                    }
+
+                    // Check for cycles using DFS
+                    const visited = new Set<string>();
+                    const recursionStack = new Set<string>();
+
+                    const hasCycle = (nodeId: string): boolean => {
+                        if (recursionStack.has(nodeId)) {
+                            return true;
+                        }
+                        if (visited.has(nodeId)) {
+                            return false;
+                        }
+
+                        visited.add(nodeId);
+                        recursionStack.add(nodeId);
+
+                        const neighbors = adjacency.get(nodeId) || [];
+                        for (const neighbor of neighbors) {
+                            if (hasCycle(neighbor)) {
+                                return true;
+                            }
+                        }
+
+                        recursionStack.delete(nodeId);
+                        return false;
+                    };
+
+                    for (const nodeId of nodeIds) {
+                        if (hasCycle(nodeId)) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId);
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Workflow contains a cycle involving node '${nodeId}'`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            this.outputChannel.appendLine(`Error during workflow validation: ${error}`);
+        }
+
+        return diagnostics;
+    }
+
+    private detectPolicyValidation(content: string, document: vscode.TextDocument): vscode.Diagnostic[] {
+        const diagnostics: vscode.Diagnostic[] = [];
+        const lines = content.split('\n');
+
+        try {
+            const policy = this.parseJSON(content);
+            if (!policy || !policy.policy) {
+                return diagnostics;
+            }
+
+            const policyData = policy.policy;
+
+            // Validate required fields
+            const requiredFields = ['id', 'name', 'version', 'rego', 'enforcement'];
+            for (const field of requiredFields) {
+                if (!(field in policyData)) {
+                    const range = this.findFieldRange(content, 'policy', field);
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            `Policy must have a '${field}' field`,
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                }
+            }
+
+            // Validate version format
+            if ('version' in policyData) {
+                const version = policyData.version;
+                if (typeof version !== 'string') {
+                    const range = this.findFieldRange(content, 'policy', 'version');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Version must be a string',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else if (!this.isSemanticVersion(version)) {
+                    const range = this.findFieldRange(content, 'policy', 'version');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            `Version must follow semantic versioning (e.g., '1.0.0'), got '${version}'`,
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                }
+            }
+
+            // Validate Rego
+            if ('rego' in policyData) {
+                const rego = policyData.rego;
+                if (typeof rego !== 'string') {
+                    const range = this.findFieldRange(content, 'policy', 'rego');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Rego must be a string',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else {
+                    // Check for required Rego elements
+                    if (!rego.includes('package ')) {
+                        const range = this.findFieldRange(content, 'policy', 'rego');
+                        if (range) {
+                            diagnostics.push(new vscode.Diagnostic(
+                                range,
+                                'Rego policy must define a package',
+                                vscode.DiagnosticSeverity.Error
+                            ));
+                        }
+                    }
+
+                    // Check for default deny pattern (security best practice)
+                    if (!rego.includes('default allow := false') && !rego.includes('default allow := true')) {
+                        const range = this.findFieldRange(content, 'policy', 'rego');
+                        if (range) {
+                            diagnostics.push(new vscode.Diagnostic(
+                                range,
+                                'Rego policy should define a default allow rule (prefer \'default allow := false\' for security)',
+                                vscode.DiagnosticSeverity.Warning
+                            ));
+                        }
+                    }
+
+                    // Check for allow rule
+                    if (!rego.includes('allow if')) {
+                        const range = this.findFieldRange(content, 'policy', 'rego');
+                        if (range) {
+                            diagnostics.push(new vscode.Diagnostic(
+                                range,
+                                'Rego policy should define at least one allow rule',
+                                vscode.DiagnosticSeverity.Error
+                            ));
+                        }
+                    }
+                }
+            }
+
+            // Validate enforcement
+            if ('enforcement' in policyData) {
+                const enforcement = policyData.enforcement;
+                if (typeof enforcement !== 'object') {
+                    const range = this.findFieldRange(content, 'policy', 'enforcement');
+                    if (range) {
+                        diagnostics.push(new vscode.Diagnostic(
+                            range,
+                            'Enforcement must be an object',
+                            vscode.DiagnosticSeverity.Error
+                        ));
+                    }
+                } else {
+                    // Validate mode
+                    if (!('mode' in enforcement)) {
+                        const range = this.findFieldRange(content, 'policy', 'enforcement', 'mode');
+                        if (range) {
+                            diagnostics.push(new vscode.Diagnostic(
+                                range,
+                                'Enforcement must have a \'mode\' field',
+                                vscode.DiagnosticSeverity.Error
+                            ));
+                        }
+                    } else {
+                        const mode = enforcement.mode;
+                        const validModes = ['strict', 'moderate', 'lenient'];
+                        if (!validModes.includes(mode)) {
+                            const range = this.findFieldRange(content, 'policy', 'enforcement', 'mode');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Invalid enforcement mode: '${mode}'. Must be one of ${validModes.join(', ')}`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                    }
+
+                    // Validate action
+                    if (!('action' in enforcement)) {
+                        const range = this.findFieldRange(content, 'policy', 'enforcement', 'action');
+                        if (range) {
+                            diagnostics.push(new vscode.Diagnostic(
+                                range,
+                                'Enforcement must have an \'action\' field',
+                                vscode.DiagnosticSeverity.Error
+                            ));
+                        }
+                    } else {
+                        const action = enforcement.action;
+                        const validActions = ['deny', 'warn', 'log', 'allow'];
+                        if (!validActions.includes(action)) {
+                            const range = this.findFieldRange(content, 'policy', 'enforcement', 'action');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Invalid enforcement action: '${action}'. Must be one of ${validActions.join(', ')}`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                    }
+
+                    // Validate audit_log if present
+                    if ('audit_log' in enforcement) {
+                        const auditLog = enforcement.audit_log;
+                        if (typeof auditLog !== 'boolean') {
+                            const range = this.findFieldRange(content, 'policy', 'enforcement', 'audit_log');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    'audit_log must be a boolean',
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (error) {
+            this.outputChannel.appendLine(`Error during policy validation: ${error}`);
+        }
+
+        return diagnostics;
+    }
+
+    private parseJSON(content: string): any {
+        try {
+            return JSON.parse(content);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    private isSemanticVersion(version: string): boolean {
+        const pattern = /^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.]+))?$/;
+        return pattern.test(version);
     }
 
     private checkUnmatchedBraces(line: string): { brace: string, column: number } | null {

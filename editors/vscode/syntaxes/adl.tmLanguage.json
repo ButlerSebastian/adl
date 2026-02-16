@@ -12,6 +12,24 @@
     {
       "include": "#keywords"
     },
+{
+      "include": "#workflow-edge-relations"
+    },
+    {
+      "include": "#policy-keywords"
+    },
+    {
+      "include": "#enforcement-properties"
+    },
+    {
+      "include": "#enforcement-modes"
+    },
+    {
+      "include": "#enforcement-actions"
+    },
+    {
+      "include": "#rego-keywords"
+    },
     {
       "include": "#primitive-types"
     },
@@ -130,6 +148,46 @@
           "match": "/"
         }
       ]
+    },
+    "workflow-keywords": {
+      "name": "keyword.control.adl.workflow",
+      "match": "\\b(workflow|nodes|edges|schedule|metadata)\\b"
+    },
+    "workflow-node-keywords": {
+      "name": "keyword.control.adl.workflow.node",
+      "match": "\\b(id|type|label|config|position|metadata)\\b"
+    },
+    "workflow-edge-keywords": {
+      "name": "keyword.control.adl.workflow.edge",
+      "match": "\\b(id|source|target|relation|condition|metadata)\\b"
+    },
+    "workflow-node-types": {
+      "name": "storage.type.adl.workflow.node",
+      "match": "\\b(trigger|input|transform|action|condition|loop|output|sub-workflow|annotation)\\b"
+    },
+"workflow-edge-relations": {
+      "name": "storage.type.adl.workflow.edge",
+      "match": "\\b(data-flow|control-flow|error-flow|ai_languageModel|ai_tool|dependency)\\b"
+    },
+    "policy-keywords": {
+      "name": "keyword.control.adl.policy",
+      "match": "\\b(policy|rego|enforcement|data|metadata)\\b"
+    },
+    "enforcement-properties": {
+      "name": "keyword.control.adl.policy.enforcement",
+      "match": "\\b(mode|action|audit_log)\\b"
+    },
+    "enforcement-modes": {
+      "name": "constant.language.adl.policy.mode",
+      "match": "\\b(strict|moderate|lenient)\\b"
+    },
+    "enforcement-actions": {
+      "name": "constant.language.adl.policy.action",
+      "match": "\\b(deny|warn|log|allow)\\b"
+    },
+    "rego-keywords": {
+      "name": "keyword.control.adl.rego",
+      "match": "\\b(package|default|allow|deny|if|with|input|data)\\b"
     }
   }
 }

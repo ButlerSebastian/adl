@@ -179,6 +179,71 @@ class AgentDef(ASTNode):
 
 
 # ============================================
+# Phase 4: Workflow and Policy Definitions
+# ============================================
+
+@dataclass(eq=False)
+class WorkflowDef(ASTNode):
+    """Workflow definition"""
+    id: str
+    name: str
+    version: str
+    description: str
+    nodes: Dict[str, 'WorkflowNodeDef']
+    edges: List['WorkflowEdgeDef']
+    metadata: Dict[str, Any]
+
+
+@dataclass(eq=False)
+class WorkflowNodeDef(ASTNode):
+    """Workflow node definition"""
+    id: str
+    type: str
+    label: str
+    config: Dict[str, Any]
+    position: Dict[str, int]
+
+
+@dataclass(eq=False)
+class WorkflowEdgeDef(ASTNode):
+    """Workflow edge definition"""
+    id: str
+    source: str
+    target: str
+    relation: str
+    condition: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass(eq=False)
+class PolicyDef(ASTNode):
+    """Policy definition"""
+    id: str
+    name: str
+    version: str
+    description: str
+    rego: str
+    enforcement: 'EnforcementDef'
+    data: Dict[str, Any]
+    metadata: Dict[str, Any]
+
+
+@dataclass(eq=False)
+class EnforcementDef(ASTNode):
+    """Enforcement definition"""
+    mode: str  # "strict" | "moderate" | "lenient"
+    action: str  # "deny" | "warn" | "log" | "allow"
+    audit_log: bool
+
+
+@dataclass(eq=False)
+class PolicyDataDef(ASTNode):
+    """Policy data definition"""
+    roles: Dict[str, List[str]]
+    permissions: Dict[str, Any]
+
+
+# ============================================
 # Visitor Pattern
 # ============================================
 
@@ -235,6 +300,22 @@ class ASTVisitor(ABC, Generic[T]):
     # Agent
     @abstractmethod
     def visit_AgentDef(self, node: AgentDef) -> T: ...
+
+    # Phase 4: Workflow and Policy
+    @abstractmethod
+    def visit_WorkflowDef(self, node: WorkflowDef) -> T: ...
+
+    @abstractmethod
+    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> T: ...
+
+    @abstractmethod
+    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> T: ...
+
+    @abstractmethod
+    def visit_PolicyDef(self, node: PolicyDef) -> T: ...
+
+    @abstractmethod
+    def visit_EnforcementDef(self, node: EnforcementDef) -> T: ...
 
 
 class PrintVisitor(ASTVisitor[str]):

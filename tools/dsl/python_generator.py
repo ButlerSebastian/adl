@@ -4,11 +4,13 @@ Python Code Generator for ADL DSL
 This module generates Python type definitions from ADL DSL ASTs.
 """
 
-from typing import List
+from typing import List, Dict, Any
 from .ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
-    PrimitiveType, OptionalType, ASTVisitor
+    PrimitiveType, OptionalType, ASTVisitor,
+    WorkflowDef, WorkflowNodeDef, WorkflowEdgeDef,
+    PolicyDef, EnforcementDef, PolicyDataDef
 )
 
 
@@ -47,6 +49,12 @@ class PythonGenerator(ASTVisitor[str]):
             elif isinstance(decl, TypeDef):
                 self.lines.append(decl.accept(self))
                 self.lines.append("")
+            elif isinstance(decl, WorkflowDef):
+                self.lines.append(decl.accept(self))
+                self.lines.append("")
+            elif isinstance(decl, PolicyDef):
+                self.lines.append(decl.accept(self))
+                self.lines.append("")
 
         # Process agent if present
         if program.agent:
@@ -79,8 +87,91 @@ class PythonGenerator(ASTVisitor[str]):
             optional = "NotRequired" if field.optional else "Required"
             fields.append(f'    {field.name}: {optional}[{field_type}]')
 
-        fields_str = "\n".join(fields)
-        return f"class {node.name}(TypedDict):\n{fields_str}"
+        fields_str = "\\n".join(fields)
+        return f"class {node.name}(TypedDict):\\n{fields_str}"
+
+    def visit_WorkflowDef(self, node: WorkflowDef) -> str:
+        """Generate Python TypedDict for a workflow definition."""
+        fields = [
+            '    id: Required[str]',
+            '    name: Required[str]',
+            '    version: Required[str]',
+            '    description: Required[str]',
+            '    nodes: Required[Dict[str, WorkflowNodeDef]]',
+            '    edges: Required[List[WorkflowEdgeDef]]',
+            '    metadata: Required[Dict[str, Any]]'
+        ]
+        fields_str = "\\n".join(fields)
+        # Sanitize class name to be valid Python identifier
+        class_name = node.name.replace(" ", "_").replace("-", "_")
+        return f"class {class_name}(TypedDict):\\n{fields_str}"
+
+    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> str:
+        """Generate Python TypedDict for a workflow node definition."""
+        fields = [
+            '    id: Required[str]',
+            '    type: Required[str]',
+            '    label: Required[str]',
+            '    config: Required[Dict[str, Any]]',
+            '    position: Required[Dict[str, int]]'
+        ]
+        fields_str = "\\n".join(fields)
+        # Use id as class name (nodes don't have a name field)
+        class_name = node.id.replace(" ", "_").replace("-", "_")
+        return f"class {class_name}(TypedDict):\\n{fields_str}"
+
+    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> str:
+        """Generate Python TypedDict for a workflow edge definition."""
+        fields = [
+            '    id: Required[str]',
+            '    source: Required[str]',
+            '    target: Required[str]',
+            '    relation: Required[str]',
+            '    condition: NotRequired[Dict[str, Any]]',
+            '    metadata: NotRequired[Dict[str, Any]]'
+        ]
+        fields_str = "\\n".join(fields)
+        # Use id as class name (edges don't have a name field)
+        class_name = node.id.replace(" ", "_").replace("-", "_")
+        return f"class {class_name}(TypedDict):\\n{fields_str}"
+
+    def visit_PolicyDef(self, node: PolicyDef) -> str:
+        """Generate Python TypedDict for a policy definition."""
+        fields = [
+            '    id: Required[str]',
+            '    name: Required[str]',
+            '    version: Required[str]',
+            '    description: Required[str]',
+            '    rego: Required[str]',
+            '    enforcement: Required[EnforcementDef]',
+            '    data: Required[Dict[str, Any]]',
+            '    metadata: Required[Dict[str, Any]]'
+        ]
+        fields_str = "\\n".join(fields)
+        return f"class {node.name}(TypedDict):\\n{fields_str}"
+
+    def visit_EnforcementDef(self, node: EnforcementDef) -> str:
+        """Generate Python TypedDict for an enforcement definition."""
+        fields = [
+            '    mode: Required[str]',
+            '    action: Required[str]',
+            '    audit_log: Required[bool]'
+        ]
+        fields_str = "\\n".join(fields)
+        # Use enforcement as class name
+        class_name = "Enforcement"
+        return f"class {class_name}(TypedDict):\\n{fields_str}"
+
+    def visit_PolicyDataDef(self, node: PolicyDataDef) -> str:
+        """Generate Python TypedDict for a policy data definition."""
+        fields = [
+            '    roles: Required[Dict[str, List[str]]]',
+            '    permissions: Required[Dict[str, Any]]'
+        ]
+        fields_str = "\\n".join(fields)
+        # Use policy_data as class name
+        class_name = "PolicyData"
+        return f"class {class_name}(TypedDict):\\n{fields_str}"
 
     def visit_PrimitiveType(self, node: PrimitiveType) -> str:
         """Generate Python type for a primitive type."""

@@ -5,7 +5,11 @@ Syntax highlighting and language support for ADL (Agent Definition Language).
 ## Features
 
 - **Syntax Highlighting**: Full syntax highlighting for ADL files (.adl)
+  - Phase 1-3: Basic types, enums, agents, tools
+  - Phase 4: Workflow and policy syntax highlighting
 - **Error Diagnostics**: Real-time syntax and validation error detection
+  - Phase 1-3: Syntax errors, type validation
+  - Phase 4: Workflow and policy validation
 - **Auto-completion**: Intelligent code completion for keywords, types, and fields
 - **Color Theme**: Custom dark theme optimized for ADL development
 - **Language Configuration**: Auto-closing brackets, comments, and more
@@ -52,6 +56,20 @@ The extension will be published to the VS Code Marketplace for easy installation
 - Brackets: `{ } [ ] ( )`
 - Separators: `: , ? | . /`
 
+### Phase 4: Workflow Keywords
+- **Top-level**: `workflow`, `nodes`, `edges`, `schedule`, `metadata`
+- **Node properties**: `id`, `type`, `label`, `config`, `position`, `metadata`
+- **Edge properties**: `id`, `source`, `target`, `relation`, `condition`, `metadata`
+- **Node types**: `trigger`, `input`, `transform`, `action`, `condition`, `loop`, `output`, `sub-workflow`, `annotation`
+- **Edge relations**: `data-flow`, `control-flow`, `error-flow`, `ai_languageModel`, `ai_tool`, `dependency`
+
+### Phase 4: Policy Keywords
+- **Top-level**: `policy`, `rego`, `enforcement`, `data`, `metadata`
+- **Enforcement properties**: `mode`, `action`, `audit_log`
+- **Enforcement modes**: `strict`, `moderate`, `lenient`
+- **Enforcement actions**: `deny`, `warn`, `log`, `allow`
+- **Rego keywords**: `package`, `default`, `allow`, `deny`, `if`, `with`, `input`, `data`
+
 ## Error Diagnostics
 
 The extension provides real-time error detection for ADL files:
@@ -66,6 +84,22 @@ The extension provides real-time error detection for ADL files:
 - **Missing import paths**: Import statements require a path
 - **Missing definition names**: `enum`, `type`, and `agent` definitions require names
 - **Missing type annotations**: Type annotations require a type
+
+### Phase 4: Workflow Validation
+- **Missing required fields**: `id`, `name`, `version`, `nodes`, `edges`
+- **Invalid node types**: Node type must be one of the supported types
+- **Invalid edge relations**: Edge relation must be one of the supported relations
+- **Duplicate node IDs**: Node IDs must be unique within a workflow
+- **Duplicate edge IDs**: Edge IDs must be unique within a workflow
+- **Cycle detection**: Workflows must be acyclic (DAG)
+
+### Phase 4: Policy Validation
+- **Missing required fields**: `id`, `name`, `version`, `rego`, `enforcement`
+- **Invalid enforcement mode**: Mode must be `strict`, `moderate`, or `lenient`
+- **Invalid enforcement action**: Action must be `deny`, `warn`, `log`, or `allow`
+- **Rego syntax errors**: Basic Rego syntax validation
+- **Missing Rego package**: Rego policy must have a package definition
+- **Missing default allow rule**: Rego policy should have a default allow rule
 
 ### Error Display
 Errors are displayed in:
@@ -275,6 +309,84 @@ agent MyAgent {
   name: string
   version: integer
   config: Config
+}
+```
+
+## Phase 4 Examples
+
+### Workflow Example
+
+```adl
+workflow SequentialProcessing {
+  id: "workflow-001"
+  name: "Sequential Data Processing"
+  version: "1.0.0"
+  description: "Process data through sequential stages"
+
+  nodes: {
+    "input-node": {
+      id: "input-node"
+      type: "input"
+      label: "Data Input"
+      config: {}
+      position: { x: 100, y: 100 }
+    }
+    "transform-node": {
+      id: "transform-node"
+      type: "transform"
+      label: "Transform Data"
+      config: {}
+      position: { x: 300, y: 100 }
+    }
+  }
+
+  edges: [
+    {
+      id: "edge-001"
+      source: "input-node"
+      target: "transform-node"
+      relation: "data-flow"
+    }
+  ]
+}
+```
+
+### Policy Example
+
+```adl
+policy RBACPolicy {
+  id: "policy-001"
+  name: "Role-Based Access Control"
+  version: "1.0.0"
+  description: "Enforce role-based access control"
+
+  rego: """
+    package authz
+
+    default allow = false
+
+    allow {
+      input.user == data.roles[input.role]
+      input.action == data.permissions[input.role][_]
+    }
+  """
+
+  enforcement: {
+    mode: "strict"
+    action: "deny"
+    audit_log: true
+  }
+
+  data: {
+    roles: {
+      "admin": ["alice", "bob"]
+      "user": ["charlie"]
+    }
+    permissions: {
+      "admin": ["read", "write", "delete"]
+      "user": ["read"]
+    }
+  }
 }
 ```
 

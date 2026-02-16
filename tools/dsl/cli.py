@@ -165,6 +165,16 @@ def create_parser() -> argparse.ArgumentParser:
         help='Output format (default: typescript)'
     )
     generate_parser.add_argument(
+        '--typescript',
+        action='store_true',
+        help='Generate TypeScript code (alias for --format typescript)'
+    )
+    generate_parser.add_argument(
+        '--python',
+        action='store_true',
+        help='Generate Python code (alias for --format python)'
+    )
+    generate_parser.add_argument(
         '--watch',
         action='store_true',
         help='Watch mode: regenerate on file changes'
@@ -421,15 +431,18 @@ def cmd_generate(args) -> int:
 
             program = parser.parse(dsl_content)
 
-            if args.format == 'typescript':
+            # Use TypeScript format if --typescript flag is specified
+            format_used = 'typescript' if args.typescript else args.format
+
+            if format_used == 'typescript':
                 output = parser.generate_typescript(program)
-            elif args.format == 'python':
+            elif format_used == 'python':
                 output = parser.generate_python(program)
-            elif args.format == 'json-schema':
+            elif format_used == 'json-schema':
                 schema = parser.generate_json_schema(program)
                 output = json.dumps(schema, indent=2)
             else:
-                print(f"Error: Unknown format {args.format}", file=sys.stderr)
+                print(f"Error: Unknown format {format_used}", file=sys.stderr)
                 return None
 
             if args.docs:
@@ -439,7 +452,7 @@ def cmd_generate(args) -> int:
             if args.output:
                 with open(args.output, 'w') as f:
                     f.write(output)
-                print(f"✓ Generated {args.format} from {args.input} -> {args.output}")
+                print(f"✓ Generated {format_used} from {args.input} -> {args.output}")
             else:
                 print(output)
 
