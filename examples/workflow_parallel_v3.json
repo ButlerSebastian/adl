@@ -1,0 +1,287 @@
+{
+  "version": 3,
+  "version_string": "3.0.0",
+  "lifecycle": {
+    "status": "active",
+    "created_at": "2025-02-16T10:00:00Z",
+    "last_updated": "2025-02-16T10:00:00Z"
+  },
+  "name": "parallel_workflow_agent",
+  "description": "Agent with parallel workflow for concurrent data processing",
+  "role": "Parallel Processor",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.7,
+    "max_tokens": 2000
+  },
+  "workflow": {
+    "id": "parallel-data-processing",
+    "name": "Parallel Data Processing",
+    "version": "1.0.0",
+    "description": "Parallel workflow for processing data through multiple concurrent stages",
+    "nodes": {
+      "input-node": {
+        "id": "input-node",
+        "type": "input",
+        "label": "Read Data",
+        "config": {
+          "source": "api",
+          "endpoint": "/data",
+          "method": "GET"
+        },
+        "position": { "x": 100, "y": 200 }
+      },
+      "process-a": {
+        "id": "process-a",
+        "type": "transform",
+        "label": "Process A",
+        "config": {
+          "operation": "map",
+          "expression": "data.map(x => x * 2)"
+        },
+        "position": { "x": 300, "y": 50 }
+      },
+      "process-b": {
+        "id": "process-b",
+        "type": "transform",
+        "label": "Process B",
+        "config": {
+          "operation": "filter",
+          "expression": "data.filter(x => x > 0)"
+        },
+        "position": { "x": 300, "y": 200 }
+      },
+      "process-c": {
+        "id": "process-c",
+        "type": "transform",
+        "label": "Process C",
+        "config": {
+          "operation": "reduce",
+          "expression": "data.reduce((a, b) => a + b, 0)"
+        },
+        "position": { "x": 300, "y": 350 }
+      },
+      "merge-node": {
+        "id": "merge-node",
+        "type": "transform",
+        "label": "Merge Results",
+        "config": {
+          "operation": "merge",
+          "strategy": "concat"
+        },
+        "position": { "x": 500, "y": 200 }
+      },
+      "output-node": {
+        "id": "output-node",
+        "type": "output",
+        "label": "Save Results",
+        "config": {
+          "destination": "database",
+          "table": "parallel_results",
+          "mode": "append"
+        },
+        "position": { "x": 700, "y": 200 }
+      }
+    },
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "input-node",
+        "target": "process-a",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-2",
+        "source": "input-node",
+        "target": "process-b",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-3",
+        "source": "input-node",
+        "target": "process-c",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-4",
+        "source": "process-a",
+        "target": "merge-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-5",
+        "source": "process-b",
+        "target": "merge-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-6",
+        "source": "process-c",
+        "target": "merge-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-7",
+        "source": "merge-node",
+        "target": "output-node",
+        "relation": "data-flow"
+      }
+    ],
+    "metadata": {
+      "author": "data-team",
+      "tags": ["parallel", "concurrent", "data-processing"]
+    }
+  },
+  "tools": [
+    {
+      "name": "read_data",
+      "description": "Read data from API endpoint",
+      "category": "data.input",
+      "parameters": [
+        {
+          "name": "endpoint",
+          "type": "string",
+          "description": "API endpoint",
+          "required": true
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "description": "HTTP method",
+          "enum": ["GET", "POST"],
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns data from API"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "transform_data",
+      "description": "Transform data using operation",
+      "category": "data.transform",
+      "parameters": [
+        {
+          "name": "operation",
+          "type": "string",
+          "description": "Transform operation",
+          "enum": ["map", "filter", "reduce"],
+          "required": true
+        },
+        {
+          "name": "expression",
+          "type": "string",
+          "description": "Transform expression",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns transformed data"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "merge_data",
+      "description": "Merge multiple data streams",
+      "category": "data.transform",
+      "parameters": [
+        {
+          "name": "strategy",
+          "type": "string",
+          "description": "Merge strategy",
+          "enum": ["concat", "union", "intersect"],
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns merged data"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "save_data",
+      "description": "Save data to database",
+      "category": "data.output",
+      "parameters": [
+        {
+          "name": "destination",
+          "type": "string",
+          "description": "Destination type",
+          "enum": ["database", "file", "api"],
+          "required": true
+        },
+        {
+          "name": "table",
+          "type": "string",
+          "description": "Table name",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "SuccessResult",
+        "description": "Returns success status"
+      },
+      "invocation": { "type": "python_function" }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "sqlite",
+    "retention_days": 30,
+    "policies": {
+      "max_entries": 1000,
+      "max_size_mb": 100
+    },
+    "privacy": {
+      "encryption": true,
+      "anonymization": false
+    }
+  },
+  "permissions": {
+    "file_io": {
+      "read": true,
+      "write": true,
+      "allowed_paths": ["/workspace/*"]
+    },
+    "network": {
+      "enabled": true,
+      "allowed_domains": ["api.example.com"]
+    },
+    "env_vars": {
+      "allowed": ["API_KEY"]
+    }
+  },
+  "dependencies": {
+    "python": [
+      {
+        "name": "requests",
+        "version": ">=2.28.0"
+      },
+      {
+        "name": "concurrent.futures",
+        "version": ">=3.2.0"
+      }
+    ]
+  },
+  "governance": {
+    "owner": "data-team",
+    "compliance": ["SOC2"],
+    "audit_log": true,
+    "change_log": [
+      {
+        "version": "3.0.0",
+        "date": "2025-02-16",
+        "changes": [
+          "Added parallel workflow for concurrent data processing",
+          "Implemented 3 parallel processing stages with merge"
+        ]
+      }
+    ]
+  }
+}

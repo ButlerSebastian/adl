@@ -1,0 +1,306 @@
+{
+  "version": 3,
+  "version_string": "3.0.0",
+  "lifecycle": {
+    "status": "active",
+    "created_at": "2025-02-16T10:00:00Z",
+    "last_updated": "2025-02-16T10:00:00Z"
+  },
+  "name": "conditional_workflow_agent",
+  "description": "Agent with conditional workflow for branching logic",
+  "role": "Conditional Processor",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.7,
+    "max_tokens": 2000
+  },
+  "workflow": {
+    "id": "conditional-data-processing",
+    "name": "Conditional Data Processing",
+    "version": "1.0.0",
+    "description": "Conditional workflow with branching logic based on data status",
+    "nodes": {
+      "input-node": {
+        "id": "input-node",
+        "type": "input",
+        "label": "Read Data",
+        "config": {
+          "source": "api",
+          "endpoint": "/data",
+          "method": "GET"
+        },
+        "position": { "x": 100, "y": 200 }
+      },
+      "condition-node": {
+        "id": "condition-node",
+        "type": "condition",
+        "label": "Check Status",
+        "config": {
+          "expression": "data.status",
+          "cases": ["success", "failure", "pending"]
+        },
+        "position": { "x": 300, "y": 200 }
+      },
+      "process-success": {
+        "id": "process-success",
+        "type": "action",
+        "label": "Handle Success",
+        "config": {
+          "action": "notify",
+          "channel": "slack",
+          "message": "Data processed successfully"
+        },
+        "position": { "x": 500, "y": 50 }
+      },
+      "process-failure": {
+        "id": "process-failure",
+        "type": "action",
+        "label": "Handle Failure",
+        "config": {
+          "action": "alert",
+          "channel": "email",
+          "recipients": ["admin@example.com"],
+          "message": "Data processing failed"
+        },
+        "position": { "x": 500, "y": 200 }
+      },
+      "process-pending": {
+        "id": "process-pending",
+        "type": "action",
+        "label": "Handle Pending",
+        "config": {
+          "action": "retry",
+          "max_retries": 3,
+          "delay_seconds": 60
+        },
+        "position": { "x": 500, "y": 350 }
+      },
+      "output-node": {
+        "id": "output-node",
+        "type": "output",
+        "label": "Save Result",
+        "config": {
+          "destination": "database",
+          "table": "conditional_results",
+          "mode": "append"
+        },
+        "position": { "x": 700, "y": 200 }
+      }
+    },
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "input-node",
+        "target": "condition-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-2",
+        "source": "condition-node",
+        "target": "process-success",
+        "relation": "control-flow",
+        "condition": "data.status == 'success'"
+      },
+      {
+        "id": "edge-3",
+        "source": "condition-node",
+        "target": "process-failure",
+        "relation": "control-flow",
+        "condition": "data.status == 'failure'"
+      },
+      {
+        "id": "edge-4",
+        "source": "condition-node",
+        "target": "process-pending",
+        "relation": "control-flow",
+        "condition": "data.status == 'pending'"
+      },
+      {
+        "id": "edge-5",
+        "source": "process-success",
+        "target": "output-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-6",
+        "source": "process-failure",
+        "target": "output-node",
+        "relation": "data-flow"
+      },
+      {
+        "id": "edge-7",
+        "source": "process-pending",
+        "target": "output-node",
+        "relation": "data-flow"
+      }
+    ],
+    "metadata": {
+      "author": "data-team",
+      "tags": ["conditional", "branching", "error-handling"]
+    }
+  },
+  "tools": [
+    {
+      "name": "read_data",
+      "description": "Read data from API endpoint",
+      "category": "data.input",
+      "parameters": [
+        {
+          "name": "endpoint",
+          "type": "string",
+          "description": "API endpoint",
+          "required": true
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "description": "HTTP method",
+          "enum": ["GET", "POST"],
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns data from API"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "check_condition",
+      "description": "Check condition and branch",
+      "category": "logic.condition",
+      "parameters": [
+        {
+          "name": "expression",
+          "type": "string",
+          "description": "Condition expression",
+          "required": true
+        },
+        {
+          "name": "cases",
+          "type": "array",
+          "description": "Possible cases",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ConditionResult",
+        "description": "Returns condition result"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "handle_action",
+      "description": "Handle action based on condition",
+      "category": "action.handler",
+      "parameters": [
+        {
+          "name": "action",
+          "type": "string",
+          "description": "Action type",
+          "enum": ["notify", "alert", "retry"],
+          "required": true
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Notification channel",
+          "required": true
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Action message",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ActionResult",
+        "description": "Returns action result"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "save_data",
+      "description": "Save data to database",
+      "category": "data.output",
+      "parameters": [
+        {
+          "name": "destination",
+          "type": "string",
+          "description": "Destination type",
+          "enum": ["database", "file", "api"],
+          "required": true
+        },
+        {
+          "name": "table",
+          "type": "string",
+          "description": "Table name",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "SuccessResult",
+        "description": "Returns success status"
+      },
+      "invocation": { "type": "python_function" }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "sqlite",
+    "retention_days": 30,
+    "policies": {
+      "max_entries": 1000,
+      "max_size_mb": 100
+    },
+    "privacy": {
+      "encryption": true,
+      "anonymization": false
+    }
+  },
+  "permissions": {
+    "file_io": {
+      "read": true,
+      "write": true,
+      "allowed_paths": ["/workspace/*"]
+    },
+    "network": {
+      "enabled": true,
+      "allowed_domains": ["api.example.com", "slack.com", "smtp.gmail.com"]
+    },
+    "env_vars": {
+      "allowed": ["API_KEY", "SLACK_WEBHOOK", "SMTP_PASSWORD"]
+    }
+  },
+  "dependencies": {
+    "python": [
+      {
+        "name": "requests",
+        "version": ">=2.28.0"
+      },
+      {
+        "name": "slack-sdk",
+        "version": ">=3.0.0"
+      }
+    ]
+  },
+  "governance": {
+    "owner": "data-team",
+    "compliance": ["SOC2"],
+    "audit_log": true,
+    "change_log": [
+      {
+        "version": "3.0.0",
+        "date": "2025-02-16",
+        "changes": [
+          "Added conditional workflow with branching logic",
+          "Implemented 3 condition branches (success, failure, pending)",
+          "Added error handling and retry logic"
+        ]
+      }
+    ]
+  }
+}
