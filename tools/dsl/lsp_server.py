@@ -310,6 +310,48 @@ class ADLLanguageServer(LanguageServer):
 
         return line[start:end]
 
+    @default_language_server_protocol.feature("textDocument/hover")
+    async def hover(self, params: HoverParams) -> Optional[Hover]:
+        """Provide hover information."""
+        document = self.workspace.get_document(params.text_document.uri)
+        if not document:
+            return None
+
+        ast = self.parse_document(document)
+        if not ast:
+            return None
+
+        word = self._get_word_at_position(document, params.position)
+        if not word:
+            return None
+
+        for type_def in getattr(ast, 'types', []):
+            if type_def.name == word:
+                fields_info = ""
+                if hasattr(type_def, 'fields') and type_def.fields:
+                    fields_info = "\n\n**Fields:**\n"
+                    for field in type_def.fields:
+                        field_type = getattr(field, 'type', 'unknown')
+                        fields_info += f"- `{field.name}`: {field_type}\n"
+
+                return Hover(
+                    contents=f"**Type:** {type_def.name}{fields_info}"
+                )
+
+        for enum_def in getattr(ast, 'enums', []):
+            if enum_def.name == word:
+                values_info = ""
+                if hasattr(enum_def, 'values') and enum_def.values:
+                    values_info = "\n\n**Values:**\n"
+                    for value in enum_def.values:
+                        values_info += f"- `{value}`\n"
+
+                return Hover(
+                    contents=f"**Enum:** {enum_def.name}{values_info}"
+                )
+
+        return None
+
 
 def create_server() -> ADLLanguageServer:
     """Create and return ADL Language Server instance."""
