@@ -269,6 +269,258 @@
     },
     "memory": {
       "$ref": "./components/memory/config.json"
+    },
+    "execution_constraints": {
+      "type": "object",
+      "description": "Execution constraints and capability negotiation for v2 agents. Defines time, memory, resource, cost, and security constraints.",
+      "additionalProperties": false,
+      "properties": {
+        "time_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_execution_time_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum total execution time in milliseconds."
+            },
+            "max_tool_invocation_time_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum time per tool invocation in milliseconds."
+            },
+            "max_llm_inference_time_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum time for LLM inference in milliseconds."
+            },
+            "timeout_action": {
+              "type": "string",
+              "enum": ["terminate", "continue", "warn"],
+              "description": "Action to take on timeout."
+            }
+          },
+          "description": "Time constraints for agent execution."
+        },
+        "memory_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_memory_mb": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum memory usage in megabytes."
+            },
+            "max_context_tokens": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum context window size in tokens."
+            },
+            "max_tool_output_size_mb": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum tool output size in megabytes."
+            },
+            "memory_eviction_policy": {
+              "type": "string",
+              "enum": ["lru", "fifo", "random"],
+              "description": "Policy for memory eviction."
+            }
+          },
+          "description": "Memory constraints for agent execution."
+        },
+        "resource_quotas": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_llm_calls_per_hour": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum LLM API calls per hour."
+            },
+            "max_tool_invocations_per_task": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum tool invocations per task."
+            },
+            "max_network_requests_per_minute": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum network requests per minute."
+            },
+            "max_file_operations_per_task": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum file operations per task."
+            }
+          },
+          "description": "Resource quotas for agent execution."
+        },
+        "cost_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_cost_per_task_usd": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Maximum cost per task in USD."
+            },
+            "max_cost_per_hour_usd": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Maximum cost per hour in USD."
+            },
+            "cost_tracking_enabled": {
+              "type": "boolean",
+              "description": "Enable cost tracking."
+            },
+            "cost_alert_threshold_usd": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Alert threshold in USD."
+            }
+          },
+          "description": "Cost constraints for agent execution."
+        },
+        "security_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "allowed_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Whitelist of allowed domains."
+            },
+            "blocked_domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Blacklist of blocked domains."
+            },
+            "max_file_size_mb": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum file size in megabytes."
+            },
+            "allowed_file_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allowed file extensions."
+            },
+            "require_encryption": {
+              "type": "boolean",
+              "description": "Require encryption for sensitive data."
+            }
+          },
+          "description": "Security constraints for agent execution."
+        },
+        "capability_negotiation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable capability negotiation."
+            },
+            "protocol": {
+              "type": "string",
+              "enum": ["handshake", "discovery", "declaration"],
+              "description": "Negotiation protocol type."
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Negotiation timeout in milliseconds."
+            },
+            "fallback_strategy": {
+              "type": "string",
+              "enum": ["degrade", "fail", "warn"],
+              "description": "Fallback strategy if negotiation fails."
+            }
+          },
+          "description": "Capability negotiation configuration."
+        },
+        "capability_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Capability name."
+                  },
+                  "version": {
+                    "type": "string",
+                    "description": "Required version (e.g., '>=1.0.0')."
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "Required provider (optional)."
+                  }
+                },
+                "required": ["name"]
+              },
+              "description": "Required capabilities."
+            },
+            "optional": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Capability name."
+                  },
+                  "version": {
+                    "type": "string",
+                    "description": "Required version (e.g., '>=1.0.0')."
+                  }
+                },
+                "required": ["name"]
+              },
+              "description": "Optional capabilities."
+            }
+          },
+          "description": "Capability requirements for agent execution."
+        },
+        "enforcement": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["strict", "moderate", "lenient"],
+              "description": "Enforcement level."
+            },
+            "violation_action": {
+              "type": "string",
+              "enum": ["terminate", "continue", "degrade"],
+              "description": "Action on constraint violation."
+            },
+            "logging_enabled": {
+              "type": "boolean",
+              "description": "Enable constraint violation logging."
+            },
+            "alert_on_violation": {
+              "type": "boolean",
+              "description": "Alert on constraint violation."
+            }
+          },
+          "description": "Constraint enforcement configuration."
+        }
+      },
+      "description": "Execution constraints and capability negotiation."
     }
   },
   "required": [
