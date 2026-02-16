@@ -77,6 +77,152 @@
     "role": {
       "$ref": "./components/agent/role.json"
     },
+    "agent_roles": {
+      "type": "object",
+      "description": "Multi-agent role configuration for v2 agents. Defines primary role, secondary roles, capabilities, constraints, and communication protocols.",
+      "additionalProperties": false,
+      "properties": {
+        "primary_role": {
+          "type": "string",
+          "enum": ["coordinator", "worker", "supervisor", "critic"],
+          "description": "Primary role for this agent in multi-agent coordination."
+        },
+        "secondary_roles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["coordinator", "worker", "supervisor", "critic"]
+          },
+          "maxItems": 2,
+          "description": "Optional secondary roles for this agent. Maximum 2 secondary roles allowed."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the capability."
+              },
+              "type": {
+                "type": "string",
+                "enum": ["management", "coordination", "execution", "validation", "advisory"],
+                "description": "Type of capability."
+              },
+              "scope": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Scope of operations for this capability."
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["coordinator", "worker", "supervisor", "critic"]
+                },
+                "description": "Target roles this capability can operate on."
+              }
+            },
+            "required": ["name", "type"]
+          },
+          "description": "List of capabilities for this role."
+        },
+        "constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_coordinators": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum number of coordinators allowed in agent group."
+            },
+            "can_execute_tasks": {
+              "type": "boolean",
+              "description": "Whether this agent can execute domain-specific tasks."
+            },
+            "can_modify_configuration": {
+              "type": "boolean",
+              "description": "Whether this agent can modify agent group configuration."
+            },
+            "must_report_to": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["coordinator", "worker", "supervisor", "critic"]
+              },
+              "description": "Roles this agent must report to."
+            },
+            "communication_channels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["direct", "broadcast", "pubsub"]
+              },
+              "description": "Communication channels this agent can use."
+            }
+          },
+          "description": "Constraints applied to this role."
+        },
+        "communication_protocols": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "message_format": {
+              "type": "string",
+              "enum": ["json", "protobuf", "avro"],
+              "description": "Message format for communication."
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["direct", "broadcast", "pubsub"]
+              },
+              "description": "Available communication channels."
+            },
+            "latency_requirements": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_latency_ms": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Maximum acceptable latency in milliseconds."
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high", "critical"],
+                  "description": "Priority level for messages."
+                }
+              },
+              "description": "Latency requirements for communication."
+            },
+            "reliability": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "ack_required": {
+                  "type": "boolean",
+                  "description": "Whether acknowledgment is required for messages."
+                },
+                "retry_policy": {
+                  "type": "string",
+                  "enum": ["none", "fixed", "exponential_backoff"],
+                  "description": "Retry policy for failed messages."
+                }
+              },
+              "description": "Reliability settings for communication."
+            }
+          },
+          "description": "Communication protocol configuration."
+        }
+      },
+      "required": ["primary_role"]
+    },
     "llm": {
       "type": "string",
       "description": "Identifier of the primary LLM provider or model family used by this agent (e.g., 'openai')."
