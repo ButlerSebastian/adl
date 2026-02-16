@@ -701,6 +701,716 @@
         }
       },
       "description": "Event-driven tool invocation configuration."
+    },
+    "rag_extensions": {
+      "type": "object",
+      "description": "Advanced RAG extensions for v2 agents. Includes hierarchical indexing, hybrid search, and advanced filtering.",
+      "additionalProperties": false,
+      "properties": {
+        "rag_hierarchy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "root_index": {
+              "type": "string",
+              "description": "Root index name."
+            },
+            "sub_indices": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Sub-index name."
+                  },
+                  "parent": {
+                    "type": "string",
+                    "description": "Parent index name."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["vector", "keyword", "hybrid"],
+                    "description": "Index type."
+                  }
+                },
+                "required": ["name", "parent", "type"]
+              },
+              "description": "Sub-indices in the hierarchy."
+            }
+          },
+          "description": "RAG index hierarchy configuration."
+        },
+        "hybrid_search": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable hybrid search."
+            },
+            "vector_search": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable vector search."
+                },
+                "embedding_model": {
+                  "type": "string",
+                  "description": "Embedding model name."
+                },
+                "similarity_metric": {
+                  "type": "string",
+                  "enum": ["cosine", "euclidean", "dot"],
+                  "description": "Similarity metric."
+                },
+                "top_k": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Number of results to return."
+                },
+                "min_score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Minimum similarity score."
+                }
+              },
+              "description": "Vector search configuration."
+            },
+            "keyword_search": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable keyword search."
+                },
+                "algorithm": {
+                  "type": "string",
+                  "enum": ["bm25", "tfidf"],
+                  "description": "Keyword search algorithm."
+                },
+                "top_k": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Number of results to return."
+                },
+                "min_score": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Minimum keyword score."
+                }
+              },
+              "description": "Keyword search configuration."
+            },
+            "fusion_method": {
+              "type": "string",
+              "enum": ["rrf", "weighted", "concat"],
+              "description": "Fusion method for combining results."
+            },
+            "vector_weight": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Weight for vector search results."
+            },
+            "keyword_weight": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Weight for keyword search results."
+            },
+            "top_k": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of results to return after fusion."
+            }
+          },
+          "description": "Hybrid search configuration."
+        },
+        "cross_references": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable cross-references."
+            },
+            "max_depth": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum reference depth."
+            },
+            "allowed_indices": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allowed indices for cross-references."
+            }
+          },
+          "description": "Cross-reference configuration."
+        },
+        "rag_pipeline": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "stages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Stage name."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["hybrid", "rerank", "deduplicate", "filter"],
+                    "description": "Stage type."
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Stage configuration."
+                  }
+                },
+                "required": ["name", "type"]
+              },
+              "description": "Pipeline stages."
+            },
+            "parallel_stages": {
+              "type": "boolean",
+              "description": "Enable parallel stage execution."
+            },
+            "timeout_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Pipeline timeout in milliseconds."
+            }
+          },
+          "description": "RAG pipeline configuration."
+        }
+      },
+      "description": "Advanced RAG extensions configuration."
+    },
+    "memory_extensions": {
+      "type": "object",
+      "description": "Memory extensions for v2 agents. Includes episodic, semantic, and working memory with lifecycle management.",
+      "additionalProperties": false,
+      "properties": {
+        "episodic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable episodic memory."
+            },
+            "backend": {
+              "type": "string",
+              "enum": ["vector", "graph", "keyvalue"],
+              "description": "Storage backend."
+            },
+            "max_episodes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum number of episodes."
+            },
+            "retention_policy": {
+              "type": "string",
+              "enum": ["importance_based", "usage_based", "ttl"],
+              "description": "Retention policy."
+            },
+            "compression": {
+              "type": "boolean",
+              "description": "Enable compression."
+            }
+          },
+          "description": "Episodic memory configuration."
+        },
+        "semantic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable semantic memory."
+            },
+            "backend": {
+              "type": "string",
+              "enum": ["vector", "graph", "keyvalue"],
+              "description": "Storage backend."
+            },
+            "max_concepts": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum number of concepts."
+            },
+            "retention_policy": {
+              "type": "string",
+              "enum": ["importance_based", "usage_based", "ttl"],
+              "description": "Retention policy."
+            },
+            "knowledge_graph": {
+              "type": "boolean",
+              "description": "Enable knowledge graph."
+            }
+          },
+          "description": "Semantic memory configuration."
+        },
+        "working": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable working memory."
+            },
+            "max_items": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum number of items."
+            },
+            "retention_policy": {
+              "type": "string",
+              "enum": ["session", "task", "indefinite"],
+              "description": "Retention policy."
+            },
+            "auto_clear": {
+              "type": "boolean",
+              "description": "Auto-clear on task completion."
+            }
+          },
+          "description": "Working memory configuration."
+        },
+        "lifecycle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "creation": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "auto_create": {
+                  "type": "boolean",
+                  "description": "Auto-create memories."
+                },
+                "creation_triggers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Triggers for memory creation."
+                }
+              },
+              "description": "Memory creation configuration."
+            },
+            "eviction": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "policy": {
+                  "type": "string",
+                  "enum": ["lru", "lfu", "importance", "ttl"],
+                  "description": "Eviction policy."
+                },
+                "check_interval_ms": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Check interval in milliseconds."
+                },
+                "min_memories": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Minimum memories to retain."
+                }
+              },
+              "description": "Memory eviction configuration."
+            },
+            "consolidation": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable memory consolidation."
+                },
+                "strategy": {
+                  "type": "string",
+                  "enum": ["temporal", "semantic", "hierarchical"],
+                  "description": "Consolidation strategy."
+                },
+                "interval_hours": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Consolidation interval in hours."
+                }
+              },
+              "description": "Memory consolidation configuration."
+            }
+          },
+          "description": "Memory lifecycle configuration."
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pii_detection": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable PII detection."
+                },
+                "auto_redact": {
+                  "type": "boolean",
+                  "description": "Auto-redact PII."
+                },
+                "redaction_method": {
+                  "type": "string",
+                  "enum": ["mask", "remove", "hash"],
+                  "description": "Redaction method."
+                },
+                "pii_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "PII types to detect."
+                }
+              },
+              "description": "PII detection configuration."
+            },
+            "encryption": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable encryption."
+                },
+                "algorithm": {
+                  "type": "string",
+                  "enum": ["aes-256", "aes-128", "chacha20"],
+                  "description": "Encryption algorithm."
+                },
+                "key_rotation_days": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Key rotation interval in days."
+                },
+                "at_rest": {
+                  "type": "boolean",
+                  "description": "Encrypt at rest."
+                },
+                "in_transit": {
+                  "type": "boolean",
+                  "description": "Encrypt in transit."
+                }
+              },
+              "description": "Encryption configuration."
+            }
+          },
+          "description": "Privacy configuration."
+        }
+      },
+      "description": "Memory extensions configuration."
+    },
+    "llm_extensions": {
+      "type": "object",
+      "description": "LLM settings extensions for v2 agents. Includes multi-model support, routing, and constraints.",
+      "additionalProperties": false,
+      "properties": {
+        "primary_model": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "provider": {
+              "type": "string",
+              "description": "LLM provider."
+            },
+            "model": {
+              "type": "string",
+              "description": "Model name."
+            },
+            "api_key": {
+              "type": "string",
+              "description": "API key (can use environment variable)."
+            },
+            "endpoint": {
+              "type": "string",
+              "description": "API endpoint."
+            }
+          },
+          "required": ["provider", "model"],
+          "description": "Primary model configuration."
+        },
+        "fallback_models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "provider": {
+                "type": "string",
+                "description": "LLM provider."
+              },
+              "model": {
+                "type": "string",
+                "description": "Model name."
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Fallback priority (lower = higher priority)."
+              },
+              "trigger_conditions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["timeout", "rate_limit", "error", "unavailable"]
+                },
+                "description": "Conditions that trigger fallback."
+              }
+            },
+            "required": ["provider", "model", "priority"],
+            "description": "Fallback model configuration."
+          },
+          "description": "Fallback models configuration."
+        },
+        "specialized_models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Specialized model name."
+              },
+              "provider": {
+                "type": "string",
+                "description": "LLM provider."
+              },
+              "model": {
+                "type": "string",
+                "description": "Model name."
+              },
+              "task_types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Task types this model handles."
+              },
+              "cost_multiplier": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Cost multiplier for this model."
+              }
+            },
+            "required": ["name", "provider", "model", "task_types"],
+            "description": "Specialized model configuration."
+          },
+          "description": "Specialized models configuration."
+        },
+        "routing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "strategy": {
+              "type": "string",
+              "enum": ["direct", "task_based", "cost_based", "performance_based", "adaptive"],
+              "description": "Routing strategy."
+            },
+            "default_model": {
+              "type": "string",
+              "enum": ["primary", "fallback", "specialized"],
+              "description": "Default model to use."
+            },
+            "task_mappings": {
+              "type": "object",
+              "description": "Task to model mappings."
+            },
+            "factors": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "task_complexity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Task complexity factor."
+                },
+                "cost_budget": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Cost budget factor."
+                },
+                "performance_requirement": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "Performance requirement factor."
+                }
+              },
+              "description": "Routing factors for adaptive routing."
+            },
+            "learning_enabled": {
+              "type": "boolean",
+              "description": "Enable learning from routing decisions."
+            },
+            "feedback_interval_hours": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Feedback collection interval in hours."
+            }
+          },
+          "description": "Model routing configuration."
+        },
+        "model_constraints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "token_limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_input_tokens": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum input tokens."
+                },
+                "max_output_tokens": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum output tokens."
+                },
+                "max_total_tokens": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum total tokens."
+                },
+                "enforce_strict": {
+                  "type": "boolean",
+                  "description": "Enforce token limits strictly."
+                }
+              },
+              "description": "Token limit constraints."
+            },
+            "cost_limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_cost_per_task_usd": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Maximum cost per task in USD."
+                },
+                "max_cost_per_hour_usd": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Maximum cost per hour in USD."
+                },
+                "max_cost_per_day_usd": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Maximum cost per day in USD."
+                },
+                "alert_threshold_usd": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Alert threshold in USD."
+                }
+              },
+              "description": "Cost limit constraints."
+            },
+            "rate_limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_calls_per_minute": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum calls per minute."
+                },
+                "max_calls_per_hour": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum calls per hour."
+                },
+                "max_concurrent_calls": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum concurrent calls."
+                },
+                "backoff_strategy": {
+                  "type": "string",
+                  "enum": ["none", "fixed", "exponential_backoff"],
+                  "description": "Backoff strategy for rate limits."
+                }
+              },
+              "description": "Rate limit constraints."
+            },
+            "timeout_limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_inference_time_ms": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum inference time in milliseconds."
+                },
+                "max_total_time_ms": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Maximum total time in milliseconds."
+                },
+                "timeout_action": {
+                  "type": "string",
+                  "enum": ["terminate", "fallback", "continue"],
+                  "description": "Action on timeout."
+                }
+              },
+              "description": "Timeout limit constraints."
+            }
+          },
+          "description": "Model execution constraints."
+        },
+        "model_monitoring": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable model monitoring."
+            },
+            "metrics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Metrics to collect."
+            },
+            "sampling_rate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Sampling rate for metrics."
+            }
+          },
+          "description": "Model monitoring configuration."
+        }
+      },
+      "description": "LLM settings extensions configuration."
     }
   },
   "required": [
