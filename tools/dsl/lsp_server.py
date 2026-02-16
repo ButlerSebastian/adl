@@ -251,6 +251,65 @@ class ADLLanguageServer(LanguageServer):
         items.extend(self._get_boolean_completions())
         return items
 
+    @default_language_server_protocol.feature("textDocument/definition")
+    async def definition(self, params: DefinitionParams) -> Optional[List[Location]]:
+        """Provide go-to-definition support."""
+        document = self.workspace.get_document(params.text_document.uri)
+        if not document:
+            return None
+
+        ast = self.parse_document(document)
+        if not ast:
+            return None
+
+        word = self._get_word_at_position(document, params.position)
+        if not word:
+            return None
+
+        locations = []
+
+        for type_def in getattr(ast, 'types', []):
+            if type_def.name == word:
+                locations.append(
+                    Location(
+                        uri=document.uri,
+                        range=Range(
+                            start=Position(line=type_def.line - 1, character=0),
+                            end=Position(line=type_def.line - 1, character=100),
+                        )
+                    )
+                )
+
+        for enum_def in getattr(ast, 'enums', []):
+            if enum_def.name == word:
+                locations.append(
+                    Location(
+                        uri=document.uri,
+                        range=Range(
+                            start=Position(line=enum_def.line - 1, character=0),
+                            end=Position(line=enum_def.line - 1, character=100),
+                        )
+                    )
+                )
+
+        return locations if locations else None
+
+    def _get_word_at_position(self, document: Document, position: Position) -> Optional[str]:
+        """Get word at cursor position."""
+        line = document.lines[position.line]
+        if position.character >= len(line):
+            return None
+
+        start = position.character
+        while start > 0 and (line[start - 1].isalnum() or line[start - 1] == '_'):
+            start -= 1
+
+        end = position.character
+        while end < len(line) and (line[end].isalnum() or line[end] == '_'):
+            end += 1
+
+        return line[start:end]
+
 
 def create_server() -> ADLLanguageServer:
     """Create and return ADL Language Server instance."""
