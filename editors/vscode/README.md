@@ -5,6 +5,7 @@ Syntax highlighting and language support for ADL (Agent Definition Language).
 ## Features
 
 - **Syntax Highlighting**: Full syntax highlighting for ADL files (.adl)
+- **Error Diagnostics**: Real-time syntax and validation error detection
 - **Color Theme**: Custom dark theme optimized for ADL development
 - **Language Configuration**: Auto-closing brackets, comments, and more
 
@@ -50,6 +51,27 @@ The extension will be published to the VS Code Marketplace for easy installation
 - Brackets: `{ } [ ] ( )`
 - Separators: `: , ? | . /`
 
+## Error Diagnostics
+
+The extension provides real-time error detection for ADL files:
+
+### Syntax Errors
+- **Unmatched braces**: Detects missing or extra `{ } [ ] ( )`
+- **Invalid identifiers**: Identifiers must start with a letter or underscore
+- **Unterminated strings**: Detects missing closing quotes
+- **Invalid number formats**: Detects malformed numeric literals
+
+### Validation Errors
+- **Missing import paths**: Import statements require a path
+- **Missing definition names**: `enum`, `type`, and `agent` definitions require names
+- **Missing type annotations**: Type annotations require a type
+
+### Error Display
+Errors are displayed in:
+- Red squiggle underlines in the editor
+- Problems panel (View → Problems)
+- Output channel (View → Output → ADL Diagnostics)
+
 ## Example
 
 ```adl
@@ -89,23 +111,32 @@ agent MyAgent {
 ```
 editors/vscode/
 ├── package.json                    # Extension manifest
+├── tsconfig.json                   # TypeScript configuration
 ├── language-configuration.json     # Language configuration
 ├── syntaxes/
 │   └── adl.tmLanguage.json        # TextMate grammar
 ├── themes/
 │   └── adl-color-theme.json       # Color theme
+├── src/
+│   ├── extension.ts               # Extension entry point
+│   └── diagnostics.ts             # Diagnostics provider
 └── README.md                       # This file
 ```
 
 ### Building
 
-No build step required. The extension uses TextMate grammar for syntax highlighting.
+```bash
+npm install
+npm run compile
+```
 
 ### Testing
 
-1. Open an `.adl` file in VS Code
-2. Verify syntax highlighting works correctly
-3. Test with various ADL code examples
+1. Press `F5` to launch Extension Development Host
+2. Open an `.adl` file
+3. Verify syntax highlighting works correctly
+4. Test error detection by introducing syntax errors
+5. Check the Problems panel for error messages
 
 ## Contributing
 
