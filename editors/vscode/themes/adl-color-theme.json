@@ -1,0 +1,119 @@
+{
+  "name": "ADL Default Theme",
+  "type": "dark",
+  "tokenColors": [
+    {
+      "name": "Comments",
+      "scope": [
+        "comment.line.hash.adl"
+      ],
+      "settings": {
+        "foreground": "#6A9955",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "name": "Keywords",
+      "scope": [
+        "keyword.control.adl"
+      ],
+      "settings": {
+        "foreground": "#569CD6",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Primitive Types",
+      "scope": [
+        "storage.type.primitive.adl"
+      ],
+      "settings": {
+        "foreground": "#4EC9B0"
+      }
+    },
+    {
+      "name": "Boolean Literals",
+      "scope": [
+        "constant.language.boolean.adl"
+      ],
+      "settings": {
+        "foreground": "#569CD6"
+      }
+    },
+    {
+      "name": "Identifiers",
+      "scope": [
+        "entity.name.function.adl"
+      ],
+      "settings": {
+        "foreground": "#DCDCAA"
+      }
+    },
+    {
+      "name": "Numeric Literals",
+      "scope": [
+        "constant.numeric.integer.adl",
+        "constant.numeric.float.adl",
+        "constant.numeric.scientific.adl"
+      ],
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "name": "Strings",
+      "scope": [
+        "string.quoted.double.adl"
+      ],
+      "settings": {
+        "foreground": "#CE9178"
+      }
+    },
+    {
+      "name": "Escape Sequences",
+      "scope": [
+        "constant.character.escape.adl"
+      ],
+      "settings": {
+        "foreground": "#D7BA7D"
+      }
+    },
+    {
+      "name": "Punctuation - Brackets",
+      "scope": [
+        "punctuation.definition.bracket.curly.begin.adl",
+        "punctuation.definition.bracket.curly.end.adl",
+        "punctuation.definition.bracket.square.begin.adl",
+        "punctuation.definition.bracket.square.end.adl",
+        "punctuation.definition.bracket.round.begin.adl",
+        "punctuation.definition.bracket.round.end.adl"
+      ],
+      "settings": {
+        "foreground": "#FFD700"
+      }
+    },
+    {
+      "name": "Punctuation - Separators",
+      "scope": [
+        "punctuation.separator.colon.adl",
+        "punctuation.separator.comma.adl",
+        "punctuation.separator.question.adl",
+        "punctuation.separator.pipe.adl",
+        "punctuation.separator.dot.adl",
+        "punctuation.separator.slash.adl"
+      ],
+      "settings": {
+        "foreground": "#D4D4D4"
+      }
+    }
+  ],
+  "colors": {
+    "editor.background": "#1E1E1E",
+    "editor.foreground": "#D4D4D4",
+    "editorCursor.foreground": "#AEAFAD",
+    "editor.lineHighlightBackground": "#2A2D2E",
+    "editorLineNumber.foreground": "#858585",
+    "editor.selectionBackground": "#264F78",
+    "editor.inactiveSelectionBackground": "#3A3D41"
+  }
+}
