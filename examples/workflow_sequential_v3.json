@@ -68,19 +68,19 @@
         "id": "edge-1",
         "source": "input-node",
         "target": "transform-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-2",
         "source": "transform-node",
         "target": "validate-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-3",
         "source": "validate-node",
         "target": "output-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       }
     ],
     "metadata": {

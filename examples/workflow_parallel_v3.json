@@ -88,43 +88,43 @@
         "id": "edge-1",
         "source": "input-node",
         "target": "process-a",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-2",
         "source": "input-node",
         "target": "process-b",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-3",
         "source": "input-node",
         "target": "process-c",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-4",
         "source": "process-a",
         "target": "merge-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-5",
         "source": "process-b",
         "target": "merge-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-6",
         "source": "process-c",
         "target": "merge-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-7",
         "source": "merge-node",
         "target": "output-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       }
     ],
     "metadata": {

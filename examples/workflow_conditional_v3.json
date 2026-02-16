@@ -92,46 +92,46 @@
         "id": "edge-1",
         "source": "input-node",
         "target": "condition-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-2",
         "source": "condition-node",
         "target": "process-success",
-        "relation": "control-flow",
+        "relation": "control_flow",
         "condition": "data.status == 'success'"
       },
       {
         "id": "edge-3",
         "source": "condition-node",
         "target": "process-failure",
-        "relation": "control-flow",
+        "relation": "control_flow",
         "condition": "data.status == 'failure'"
       },
       {
         "id": "edge-4",
         "source": "condition-node",
         "target": "process-pending",
-        "relation": "control-flow",
+        "relation": "control_flow",
         "condition": "data.status == 'pending'"
       },
       {
         "id": "edge-5",
         "source": "process-success",
         "target": "output-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-6",
         "source": "process-failure",
         "target": "output-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       },
       {
         "id": "edge-7",
         "source": "process-pending",
         "target": "output-node",
-        "relation": "data-flow"
+        "relation": "data_flow"
       }
     ],
     "metadata": {
