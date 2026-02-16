@@ -7,6 +7,15 @@ Validates workflow field in ADL v3 agent definitions.
 from typing import List, Dict, Any, Set, Tuple
 from dataclasses import dataclass
 from collections import defaultdict, deque
+from functools import lru_cache
+
+
+class ErrorCategory:
+    """Categories for validation errors."""
+    SYNTAX = "syntax"
+    SEMANTIC = "semantic"
+    VALIDATION = "validation"
+    TYPE = "type"
 
 
 @dataclass
@@ -16,11 +25,64 @@ class ValidationError:
     field: str
     message: str
     severity: str = "error"
+    category: str = ErrorCategory.SEMANTIC
+
+
+@dataclass
+class ValidationErrorSummary:
+    """Summary of all validation errors grouped by category."""
+
+    total_errors: int
+    syntax_errors: List[ValidationError]
+    semantic_errors: List[ValidationError]
+    validation_errors: List[ValidationError]
+    type_errors: List[ValidationError]
+
+    def get_summary(self) -> str:
+        """Get human-readable summary of all errors."""
+        if self.total_errors == 0:
+            return "No validation errors found."
+
+        lines = [f"Found {self.total_errors} validation error(s):"]
+        lines.append("")
+
+        for category, errors in [
+            (ErrorCategory.SYNTAX, self.syntax_errors),
+            (ErrorCategory.SEMANTIC, self.semantic_errors),
+            (ErrorCategory.VALIDATION, self.validation_errors),
+            (ErrorCategory.TYPE, self.type_errors),
+        ]:
+            if errors:
+                lines.append(f"\n{category.upper()} ({len(errors)}):")
+                for error in errors:
+                    lines.append(f"  - {error.message} (field: {error.field})")
+
+        return "\n".join(lines)
+
+    def get_errors_by_category(self) -> Dict[str, List[ValidationError]]:
+        """Get errors grouped by category."""
+        return {
+            ErrorCategory.SYNTAX: self.syntax_errors,
+            ErrorCategory.SEMANTIC: self.semantic_errors,
+            ErrorCategory.VALIDATION: self.validation_errors,
+            ErrorCategory.TYPE: self.type_errors,
+        }
+
+    def has_errors(self) -> bool:
+        """Check if any errors exist."""
+        return self.total_errors > 0
+
+    def get_most_common_errors(self, n: int = 5) -> List[Tuple[str, int]]:
+        """Get most common error messages with counts."""
+        from collections import Counter
+
+        all_messages = [error.message for error in self.semantic_errors]
+        counter = Counter(all_messages)
+        return counter.most_common(n)
 
 
 class WorkflowValidator:
     """Validator for workflow configurations."""
-
     VALID_NODE_TYPES = [
         "trigger", "input", "transform", "action",
         "condition", "loop", "output", "sub_workflow", "annotation"
@@ -30,9 +92,12 @@ class WorkflowValidator:
         "ai_languageModel", "ai_tool", "dependency"
     ]
 
+    MAX_CRITICAL_ERRORS = 10
+
     def __init__(self):
         self.errors: List[ValidationError] = []
         self.warnings: List[ValidationError] = []
+        self._cache: Dict[str, tuple[List[ValidationError], List[ValidationError]]] = {}
 
     def _is_hierarchical_id(self, id_str: str) -> bool:
         """Check if ID follows hierarchical format (e.g., 'org.team.component')."""
@@ -55,13 +120,29 @@ class WorkflowValidator:
         if not workflow:
             return [], []
 
+        cache_key = self._generate_cache_key(workflow)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        critical_errors = 0
+
         self._validate_structure(workflow)
         self._validate_nodes(workflow)
         self._validate_edges(workflow)
         self._validate_cycles(workflow)
         self._validate_connections(workflow)
 
-        return self.errors, self.warnings
+        if len(self.errors) >= self.MAX_CRITICAL_ERRORS:
+            self.errors.append(ValidationError(
+                field="workflow",
+                message=f"Validation terminated early: {self.MAX_CRITICAL_ERRORS} critical errors found",
+                severity="error"
+            ))
+
+        result = (self.errors, self.warnings)
+        self._cache[cache_key] = result
+
+        return result
 
     def _validate_structure(self, workflow: Dict[str, Any]) -> None:
         """Validate workflow structure."""
@@ -417,3 +498,31 @@ def validate_workflow(workflow: Dict[str, Any]) -> List[ValidationError]:
     """Validate workflow configuration."""
     validator = WorkflowValidator()
     return validator.validate(workflow)
+
+def _generate_cache_key(self, workflow: Dict[str, Any]) -> str:
+    import hashlib
+    import json
+
+    workflow_data = {
+        'workflow_id': workflow.get('workflow_id') or workflow.get('id'),
+        'name': workflow.get('name'),
+        'version': workflow.get('version'),
+        'node_count': len(workflow.get('nodes', {})),
+        'edge_count': len(workflow.get('edges', []))
+    }
+
+    workflow_str = json.dumps(workflow_data, sort_keys=True)
+    return hashlib.md5(workflow_str.encode()).hexdigest()
+    import hashlib
+    import json
+
+    workflow_data = {
+        'workflow_id': workflow.get('workflow_id') or workflow.get('id'),
+        'name': workflow.get('name'),
+        'version': workflow.get('version'),
+        'node_count': len(workflow.get('nodes', {})),
+        'edge_count': len(workflow.get('edges', []))
+    }
+
+    workflow_str = json.dumps(workflow_data, sort_keys=True)
+    return hashlib.md5(workflow_str.encode()).hexdigest()

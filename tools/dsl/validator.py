@@ -12,6 +12,7 @@ This module provides semantic validation for ADL DSL ASTs, checking for:
 from typing import List, Dict, Set, Optional, Literal
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
@@ -83,18 +84,22 @@ Validation Errors: {self.total_errors}
         return sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
 
-class SemanticValidator(ASTVisitor[List[ValidationError]]):
+class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
     """
     Validates semantic correctness of ADL DSL AST.
     
     Uses visitor pattern to traverse AST and collect validation errors.
     """
     
+    MAX_CRITICAL_ERRORS = 10
+    
     def __init__(self):
         self.errors: List[ValidationError] = []
         self.type_definitions: Dict[str, TypeDef] = {}
         self.enum_definitions: Dict[str, EnumDef] = {}
         self.visiting: Set[str] = set()
+        self._cache: Dict[str, ValidationErrorSummary] = {}
+        self._cache_key: Optional[str] = None
     
     def validate(self, program: Program) -> ValidationErrorSummary:
         """
@@ -110,6 +115,12 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         self.type_definitions = {}
         self.enum_definitions = {}
         self.visiting = set()
+
+        cache_key = self._generate_cache_key(program)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        critical_errors = 0
 
         # First pass: collect all definitions
         for decl in program.declarations:
@@ -142,6 +153,16 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         if program.agent:
             program.agent.accept(self)
 
+        if len(self.errors) >= self.MAX_CRITICAL_ERRORS:
+            self.errors.append(ValidationError(
+                message=f"Validation terminated early: {self.MAX_CRITICAL_ERRORS} critical errors found",
+                location=SourceLocation(1, 0, 1, 0),
+                error_code="VALIDATION_TERMINATED",
+                category=ErrorCategory.VALIDATION
+            ))
+
+        self._cache[cache_key] = self._create_error_summary()
+
         return self._create_error_summary()
     
     def visit_TypeDef(self, node: TypeDef) -> ValidationErrorSummary:
@@ -168,46 +189,48 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
 
         return self._create_error_summary()
     
-    def visit_EnumDef(self, node: EnumDef) -> List[ValidationError]:
+    def visit_EnumDef(self, node: EnumDef) -> ValidationErrorSummary:
         """Validate an enum definition."""
         value_names: Set[str] = set()
-        
+
         for value in node.values:
             # Check for duplicate enum values
             if value in value_names:
                 self.errors.append(ValidationError(
                     message=f"Duplicate enum value: {value}",
                     location=node.loc,
-                    error_code="DUPLICATE_ENUM_VALUE"
+                    error_code="DUPLICATE_ENUM_VALUE",
+                    category=ErrorCategory.SEMANTIC
                 ))
             else:
                 value_names.add(value)
-        
-        return self.errors
+
+        return self._create_error_summary()
     
-    def visit_AgentDef(self, node: AgentDef) -> List[ValidationError]:
+    def visit_AgentDef(self, node: AgentDef) -> ValidationErrorSummary:
         """Validate an agent definition."""
         field_names: Set[str] = set()
-        
+
         for field in node.fields:
             if field.name in field_names:
                 self.errors.append(ValidationError(
                     message=f"Duplicate field name: {field.name}",
                     location=field.loc,
-                    error_code="DUPLICATE_FIELD"
+                    error_code="DUPLICATE_FIELD",
+                    category=ErrorCategory.SEMANTIC
                 ))
             else:
                 field_names.add(field.name)
-            
+
             self._validate_type(field.type)
-        
+
         if node.description:
             self._validate_string_length(node.description, "description", 1, 5000)
-        
+
         if node.owner:
             self._validate_string_length(node.owner, "owner", 1, 100)
-        
-        return self.errors
+
+        return self._create_error_summary()
     
     def _validate_type(self, type_node) -> None:
         """Validate a type node."""
@@ -220,7 +243,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                     self.errors.append(ValidationError(
                         message=f"Invalid type reference: {type_node.name}",
                         location=type_node.loc,
-                        error_code="INVALID_TYPE_REFERENCE"
+                        error_code="INVALID_TYPE_REFERENCE",
+                        category=ErrorCategory.TYPE
                     ))
         
         elif isinstance(type_node, ConstrainedType):
@@ -230,7 +254,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                     self.errors.append(ValidationError(
                         message=f"Invalid constraint range: min ({type_node.min_value}) > max ({type_node.max_value})",
                         location=type_node.loc,
-                        error_code="INVALID_CONSTRAINT_RANGE"
+                        error_code="INVALID_CONSTRAINT_RANGE",
+                        category=ErrorCategory.TYPE
                     ))
             
             # Validate base type
@@ -262,7 +287,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             self.errors.append(ValidationError(
                 message=f"{field_name} must be a string",
                 location=SourceLocation(1, 0, 1, 0),  # Default location for non-AST values
-                error_code="INVALID_TYPE"
+                error_code="INVALID_TYPE",
+                category=ErrorCategory.TYPE
             ))
             return
         
@@ -270,57 +296,59 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             self.errors.append(ValidationError(
                 message=f"{field_name} must be at least {min_length} character(s), got {len(value)}",
                 location=SourceLocation(1, 0, 1, 0),
-                error_code="STRING_TOO_SHORT"
+                error_code="STRING_TOO_SHORT",
+                category=ErrorCategory.TYPE
             ))
         
         if len(value) > max_length:
             self.errors.append(ValidationError(
                 message=f"{field_name} must be at most {max_length} character(s), got {len(value)}",
                 location=SourceLocation(1, 0, 1, 0),
-                error_code="STRING_TOO_LONG"
+                error_code="STRING_TOO_LONG",
+                category=ErrorCategory.TYPE
             ))
     
     def visit_default(self, node) -> ValidationErrorSummary:
         """Default visitor for unhandled node types."""
         return self._create_error_summary()
 
-    def visit_Program(self, node: Program) -> List[ValidationError]:
+    def visit_Program(self, node: Program) -> ValidationErrorSummary:
         """Visit program node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_ImportStmt(self, node) -> List[ValidationError]:
+    def visit_ImportStmt(self, node) -> ValidationErrorSummary:
         """Visit import statement node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_FieldDef(self, node: FieldDef) -> List[ValidationError]:
+    def visit_FieldDef(self, node: FieldDef) -> ValidationErrorSummary:
         """Visit field definition node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_TypeReference(self, node: TypeReference) -> List[ValidationError]:
+    def visit_TypeReference(self, node: TypeReference) -> ValidationErrorSummary:
         """Visit type reference node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_PrimitiveType(self, node: PrimitiveType) -> List[ValidationError]:
+    def visit_PrimitiveType(self, node: PrimitiveType) -> ValidationErrorSummary:
         """Visit primitive type node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_ArrayType(self, node: ArrayType) -> List[ValidationError]:
+    def visit_ArrayType(self, node: ArrayType) -> ValidationErrorSummary:
         """Visit array type node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_UnionType(self, node: UnionType) -> List[ValidationError]:
+    def visit_UnionType(self, node: UnionType) -> ValidationErrorSummary:
         """Visit union type node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_OptionalType(self, node: OptionalType) -> List[ValidationError]:
+    def visit_OptionalType(self, node: OptionalType) -> ValidationErrorSummary:
         """Visit optional type node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_ConstrainedType(self, node: ConstrainedType) -> List[ValidationError]:
+    def visit_ConstrainedType(self, node: ConstrainedType) -> ValidationErrorSummary:
         """Visit constrained type node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_EnforcementDef(self, node: EnforcementDef) -> List[ValidationError]:
+    def visit_EnforcementDef(self, node: EnforcementDef) -> ValidationErrorSummary:
         """Validate enforcement definition."""
         # Validate enforcement mode
         valid_modes = {"strict", "moderate", "lenient"}
@@ -328,7 +356,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             self.errors.append(ValidationError(
                 message=f"Invalid enforcement mode: {node.mode}. Must be one of {valid_modes}",
                 location=node.loc,
-                error_code="INVALID_ENFORCEMENT_MODE"
+                error_code="INVALID_ENFORCEMENT_MODE",
+                category=ErrorCategory.VALIDATION
             ))
 
         # Validate enforcement action
@@ -337,12 +366,13 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             self.errors.append(ValidationError(
                 message=f"Invalid enforcement action: {node.action}. Must be one of {valid_actions}",
                 location=node.loc,
-                error_code="INVALID_ENFORCEMENT_ACTION"
+                error_code="INVALID_ENFORCEMENT_ACTION",
+                category=ErrorCategory.VALIDATION
             ))
 
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_PolicyDef(self, node: PolicyDef) -> List[ValidationError]:
+    def visit_PolicyDef(self, node: PolicyDef) -> ValidationErrorSummary:
         """Validate policy definition."""
         policy_ids: Set[str] = set()
 
@@ -351,7 +381,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             self.errors.append(ValidationError(
                 message=f"Duplicate policy ID: {node.id}",
                 location=node.loc,
-                error_code="DUPLICATE_POLICY_ID"
+                error_code="DUPLICATE_POLICY_ID",
+                category=ErrorCategory.SEMANTIC
             ))
         else:
             policy_ids.add(node.id)
@@ -359,25 +390,25 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         # Validate enforcement definition
         self._validate_enforcement(node.enforcement)
 
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> List[ValidationError]:
+    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> ValidationErrorSummary:
         """Validate workflow node definition."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> List[ValidationError]:
+    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> ValidationErrorSummary:
         """Validate workflow edge definition."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_TypeBody(self, node) -> List[ValidationError]:
+    def visit_TypeBody(self, node) -> ValidationErrorSummary:
         """Visit type body node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_FieldList(self, node) -> List[ValidationError]:
+    def visit_FieldList(self, node) -> ValidationErrorSummary:
         """Visit field list node."""
-        return self.errors
+        return self._create_error_summary()
 
-    def visit_WorkflowDef(self, node: WorkflowDef) -> List[ValidationError]:
+    def visit_WorkflowDef(self, node: WorkflowDef) -> ValidationErrorSummary:
         """Validate workflow definition."""
         node_ids: Set[str] = set()
         edge_errors: List[ValidationError] = []
@@ -388,7 +419,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                 self.errors.append(ValidationError(
                     message=f"Duplicate node ID: {node_id}",
                     location=node_obj.loc,
-                    error_code="DUPLICATE_NODE_ID"
+                    error_code="DUPLICATE_NODE_ID",
+                    category=ErrorCategory.SEMANTIC
                 ))
             else:
                 node_ids.add(node_id)
@@ -399,45 +431,60 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                 edge_errors.append(ValidationError(
                     message=f"Edge references non-existent source node: {edge.source}",
                     location=edge.loc,
-                    error_code="INVALID_EDGE_REFERENCE"
+                    error_code="INVALID_EDGE_REFERENCE",
+                    category=ErrorCategory.SEMANTIC
                 ))
             if edge.target not in node.nodes:
                 edge_errors.append(ValidationError(
                     message=f"Edge references non-existent target node: {edge.target}",
                     location=edge.loc,
-                    error_code="INVALID_EDGE_REFERENCE"
+                    error_code="INVALID_EDGE_REFERENCE",
+                    category=ErrorCategory.SEMANTIC
                 ))
 
         self.errors.extend(edge_errors)
-        return self.errors
-
-        # Check for invalid edge references
-        for edge in node.edges:
-            if edge.source not in node.nodes:
-                edge_errors.append(ValidationError(
-                    message=f"Edge references non-existent source node: {edge.source}",
-                    location=edge.loc,
-                    error_code="INVALID_EDGE_REFERENCE"
-                ))
-            if edge.target not in node.nodes:
-                edge_errors.append(ValidationError(
-                    message=f"Edge references non-existent target node: {edge.target}",
-                    location=edge.loc,
-                    error_code="INVALID_EDGE_REFERENCE"
-                ))
-
-        self.errors.extend(edge_errors)
-        return self.errors
+        return self._create_error_summary()
 
     def _validate_enforcement(self, enforcement: EnforcementDef) -> None:
         """Validate enforcement definition."""
         # This is a helper method that calls the visitor
         enforcement.accept(self)
 
-    def validate_workflow(self, workflow: WorkflowDef) -> List[ValidationError]:
+    def validate_workflow(self, workflow: WorkflowDef) -> ValidationErrorSummary:
         """Validate workflow definition."""
         return workflow.accept(self)
 
-    def validate_policy(self, policy: PolicyDef) -> List[ValidationError]:
+    def validate_policy(self, policy: PolicyDef) -> ValidationErrorSummary:
         """Validate policy definition."""
         return policy.accept(self)
+
+    def _generate_cache_key(self, program: Program) -> str:
+        import hashlib
+        import json
+
+        program_data = {
+            'declarations': [
+                {
+                    'type': type(decl).__name__,
+                    'name': getattr(decl, 'name', None),
+                    'fields': [f.name for f in getattr(decl, 'fields', [])] if hasattr(decl, 'fields') else None
+                }
+                for decl in program.declarations
+            ],
+            'agent': {
+                'name': getattr(program.agent, 'name', None) if program.agent else None,
+                'fields': [f.name for f in getattr(program.agent, 'fields', [])] if program.agent and hasattr(program.agent, 'fields') else None
+            }
+        }
+
+        program_str = json.dumps(program_data, sort_keys=True)
+        return hashlib.md5(program_str.encode()).hexdigest()
+
+    def _create_error_summary(self) -> ValidationErrorSummary:
+        return ValidationErrorSummary(
+            total_errors=len(self.errors),
+            syntax_errors=[e for e in self.errors if e.category == ErrorCategory.SYNTAX],
+            semantic_errors=[e for e in self.errors if e.category == ErrorCategory.SEMANTIC],
+            validation_errors=[e for e in self.errors if e.category == ErrorCategory.VALIDATION],
+            type_errors=[e for e in self.errors if e.category == ErrorCategory.TYPE]
+        )
