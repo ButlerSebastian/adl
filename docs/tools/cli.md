@@ -711,3 +711,189 @@ echo "All ADL files are properly formatted!"
 - **Team Collaboration**: Maintain code style
 - **Code Review**: Reduce formatting noise
 - **Refactoring**: Clean up code style
+
+---
+
+## adl-lint
+
+Lint ADL files for code quality issues.
+
+### Usage
+
+```bash
+adl-lint [OPTIONS] INPUT_FILE
+```
+
+### Options
+
+- `-s, --severity LEVEL` - Minimum severity: error, warning, info (default: warning)
+- `-r, --rules RULES` - Comma-separated list of rules to enable
+- `-d, --disable RULES` - Comma-separated list of rules to disable
+- `--fix` - Automatically fix fixable issues
+- `--check` - Check only (no fixes)
+- `-o, --output FILE` - Output file for lint results (default: stdout)
+- `-f, --format FORMAT` - Output format: text, json, yaml (default: text)
+- `-v, --verbose` - Enable verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+#### Lint ADL file
+
+```bash
+adl-lint my-agent.adl
+```
+
+#### Lint with error severity only
+
+```bash
+adl-lint my-agent.adl --severity error
+```
+
+#### Lint with specific rules
+
+```bash
+adl-lint my-agent.adl --rules type-name-pascal-case,field-name-snake-case
+```
+
+#### Lint and disable specific rules
+
+```bash
+adl-lint my-agent.adl --disable trailing-whitespace,max-line-length
+```
+
+#### Lint and auto-fix
+
+```bash
+adl-lint my-agent.adl --fix
+```
+
+#### Lint and output to JSON
+
+```bash
+adl-lint my-agent.adl -f json -o lint-results.json
+```
+
+#### Lint in check mode
+
+```bash
+adl-lint my-agent.adl --check
+```
+
+### Linting Rules
+
+#### Naming Conventions
+
+- `type-name-pascal-case` - Type names should use PascalCase
+- `field-name-snake-case` - Field names should use snake_case
+- `enum-value-lowercase` - Enum values should use lowercase
+
+#### Documentation
+
+- `missing-type-description` - Type definitions should have descriptions
+- `missing-field-description` - Fields should have descriptions
+
+#### Imports
+
+- `import-order` - Imports should be ordered alphabetically
+- `unused-import` - Imports should be used
+
+#### Style
+
+- `trailing-whitespace` - Lines should not have trailing whitespace
+- `no-tabs` - Use spaces instead of tabs
+- `max-line-length` - Lines should not exceed max length
+
+### Output
+
+#### Text Format (default)
+
+```bash
+adl-lint my-agent.adl
+# warning: type-name-pascal-case - Type name should use PascalCase: myType (line 5)
+# warning: missing-field-description - Field should have a description comment (line 12)
+# error: no-tabs - Use spaces instead of tabs (line 20)
+```
+
+#### JSON Format
+
+```bash
+adl-lint my-agent.adl -f json
+{
+  "file": "my-agent.adl",
+  "issues": [
+    {
+      "rule": "type-name-pascal-case",
+      "severity": "warning",
+      "line": 5,
+      "column": 1,
+      "message": "Type name should use PascalCase: myType",
+      "fixable": false
+    }
+  ]
+}
+```
+
+#### YAML Format
+
+```bash
+adl-lint my-agent.adl -f yaml
+file: my-agent.adl
+issues:
+  - rule: type-name-pascal-case
+    severity: warning
+    line: 5
+    column: 1
+    message: Type name should use PascalCase: myType
+    fixable: false
+```
+
+### Exit Codes
+
+- `0` - No issues (or only warnings below severity threshold)
+- `1` - Issues found
+- `3` - Linting error
+- `4` - File not found
+- `5` - Parse error
+
+### Best Practices
+
+1. **Lint before committing** - Catch issues early
+2. **Use severity filters** - Focus on important issues
+3. **Enable auto-fix** - Fix simple issues automatically
+4. **Configure team rules** - Use config file for team standards
+5. **Check in CI** - Enforce quality in CI/CD
+
+### Configuration
+
+Create a `.adlrc` file:
+
+```toml
+[lint]
+severity = "warning"
+enable_rules = ["type-name-pascal-case", "field-name-snake-case"]
+disable_rules = ["max-line-length"]
+```
+
+### CI/CD Integration
+
+```bash
+#!/bin/bash
+set -e
+
+# Lint all ADL files
+for file in $(find . -name "*.adl"); do
+    echo "Linting $file..."
+    adl-lint "$file" --severity error --check
+done
+
+echo "No linting errors found!"
+```
+
+### Use Cases
+
+- **Pre-commit Hooks**: Lint before committing
+- **CI/CD Pipelines**: Enforce code quality
+- **Code Review**: Identify issues early
+- **Refactoring**: Clean up code style
+- **Team Standards**: Enforce naming conventions
