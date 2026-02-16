@@ -1,8 +1,135 @@
-{"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json", "name": "ADL", "scopeName": "source.adl", "fileTypes": ["adl"], "patterns": [
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ADL",
+  "scopeName": "source.adl",
+  "fileTypes": [
+    "adl"
+  ],
+  "patterns": [
     {
       "include": "#comments"
     },
     {
       "include": "#keywords"
+    },
+    {
+      "include": "#primitive-types"
+    },
+    {
+      "include": "#boolean-literals"
+    },
+    {
+      "include": "#identifiers"
+    },
+    {
+      "include": "#numeric-literals"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#structural-symbols"
     }
-  ], "repository": {}}
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.hash.adl",
+      "match": "#.*$"
+    },
+    "keywords": {
+      "name": "keyword.control.adl",
+      "match": "\\b(import|enum|type|agent|as|module|export|validation)\\b"
+    },
+    "primitive-types": {
+      "name": "storage.type.primitive.adl",
+      "match": "\\b(string|integer|number|boolean|object|array|any|null)\\b"
+    },
+    "boolean-literals": {
+      "name": "constant.language.boolean.adl",
+      "match": "\\b(true|false)\\b"
+    },
+    "identifiers": {
+      "name": "entity.name.function.adl",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_-]*\\b"
+    },
+    "numeric-literals": {
+      "patterns": [
+        {
+          "name": "constant.numeric.integer.adl",
+          "match": "\\b-?[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.adl",
+          "match": "\\b-?[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.scientific.adl",
+          "match": "\\b-?[0-9]+(\\.[0-9]+)?[eE][+-]?[0-9]+\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.adl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.adl",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "structural-symbols": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.bracket.curly.begin.adl",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.definition.bracket.curly.end.adl",
+          "match": "\\}"
+        },
+        {
+          "name": "punctuation.definition.bracket.square.begin.adl",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.definition.bracket.square.end.adl",
+          "match": "\\]"
+        },
+        {
+          "name": "punctuation.definition.bracket.round.begin.adl",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.definition.bracket.round.end.adl",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.separator.colon.adl",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.separator.comma.adl",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.question.adl",
+          "match": "\\?"
+        },
+        {
+          "name": "punctuation.separator.pipe.adl",
+          "match": "\\|"
+        },
+        {
+          "name": "punctuation.separator.dot.adl",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.separator.slash.adl",
+          "match": "/"
+        }
+      ]
+    }
+  }
+}
