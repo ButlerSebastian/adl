@@ -13,6 +13,7 @@ from typing import List, Dict, Set, Optional, Literal
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
+import re
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
@@ -364,6 +365,15 @@ class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
 
     def visit_ConstrainedType(self, node: ConstrainedType) -> ValidationErrorSummary:
         """Visit constrained type node."""
+        # Validate numeric range constraints
+        if node.min_value is not None and node.max_value is not None:
+            if node.min_value > node.max_value:
+                self.errors.append(ValidationError(
+                    message=f"Invalid range: minimum ({node.min_value}) > maximum ({node.max_value})",
+                    location=node.loc,
+                    error_code="INVALID_RANGE",
+                    category=ErrorCategory.VALIDATION
+                ))
         return self._create_error_summary()
 
     def visit_EnforcementDef(self, node: EnforcementDef) -> ValidationErrorSummary:

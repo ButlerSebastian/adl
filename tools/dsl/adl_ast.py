@@ -165,6 +165,7 @@ class ConstrainedType(ASTNode):
     base_type: TypeExpr
     min_value: Optional[int] = None
     max_value: Optional[int] = None
+    pattern: Optional[str] = None
 
 
 # ============================================
