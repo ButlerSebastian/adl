@@ -1,0 +1,150 @@
+{
+  "id": "advanced-rag-agent-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Advanced RAG Research Agent",
+  "description": "Research agent with advanced RAG capabilities including hierarchical indexing and hybrid search.",
+  "role": "Research Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 2048
+  },
+  "rag_extensions": {
+    "rag_hierarchy": {
+      "root_index": "knowledge_base",
+      "sub_indices": [
+        {
+          "name": "technical_docs",
+          "parent": "knowledge_base",
+          "type": "vector"
+        },
+        {
+          "name": "user_guides",
+          "parent": "knowledge_base",
+          "type": "keyword"
+        },
+        {
+          "name": "api_docs",
+          "parent": "technical_docs",
+          "type": "vector"
+        }
+      ]
+    },
+    "hybrid_search": {
+      "enabled": true,
+      "vector_search": {
+        "enabled": true,
+        "embedding_model": "text-embedding-ada-002",
+        "similarity_metric": "cosine",
+        "top_k": 10,
+        "min_score": 0.7
+      },
+      "keyword_search": {
+        "enabled": true,
+        "algorithm": "bm25",
+        "top_k": 20,
+        "min_score": 0.5
+      },
+      "fusion_method": "rrf",
+      "vector_weight": 0.7,
+      "keyword_weight": 0.3,
+      "top_k": 15
+    },
+    "cross_references": {
+      "enabled": true,
+      "max_depth": 2,
+      "allowed_indices": ["technical_docs", "user_guides"]
+    },
+    "rag_pipeline": {
+      "stages": [
+        {
+          "name": "initial_search",
+          "type": "hybrid",
+          "config": {
+            "top_k": 20
+          }
+        },
+        {
+          "name": "rerank",
+          "type": "rerank",
+          "config": {
+            "model": "cross-encoder",
+            "top_k": 10
+          }
+        },
+        {
+          "name": "deduplicate",
+          "type": "deduplicate",
+          "config": {
+            "method": "similarity"
+          }
+        }
+      ],
+      "parallel_stages": false,
+      "timeout_ms": 10000
+    }
+  },
+  "tools": [
+    {
+      "name": "search_knowledge",
+      "description": "Search knowledge base using advanced RAG.",
+      "category": "data_access.rag_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "index_id",
+          "type": "string",
+          "description": "Index to search (optional).",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results with hybrid search.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}

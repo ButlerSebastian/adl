@@ -1,0 +1,175 @@
+{
+  "id": "memory-extensions-agent-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Memory-Enhanced Agent",
+  "description": "Agent with advanced memory capabilities including episodic, semantic, and working memory.",
+  "role": "Personal Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.5,
+    "max_tokens": 2048
+  },
+  "memory_extensions": {
+    "episodic": {
+      "enabled": true,
+      "backend": "vector",
+      "max_episodes": 1000,
+      "retention_policy": "importance_based",
+      "compression": true
+    },
+    "semantic": {
+      "enabled": true,
+      "backend": "graph",
+      "max_concepts": 5000,
+      "retention_policy": "usage_based",
+      "knowledge_graph": true
+    },
+    "working": {
+      "enabled": true,
+      "max_items": 50,
+      "retention_policy": "session",
+      "auto_clear": true
+    },
+    "lifecycle": {
+      "creation": {
+        "auto_create": true,
+        "creation_triggers": ["tool_invocation", "user_interaction", "error_occurrence"]
+      },
+      "eviction": {
+        "policy": "importance",
+        "check_interval_ms": 60000,
+        "min_memories": 100
+      },
+      "consolidation": {
+        "enabled": true,
+        "strategy": "semantic",
+        "similarity_threshold": 0.9,
+        "interval_hours": 24
+      }
+    },
+    "privacy": {
+      "pii_detection": {
+        "enabled": true,
+        "auto_redact": true,
+        "redaction_method": "mask",
+        "pii_types": ["email", "phone", "ssn", "credit_card"]
+      },
+      "encryption": {
+        "enabled": true,
+        "algorithm": "aes-256",
+        "key_rotation_days": 30,
+        "at_rest": true,
+        "in_transit": true
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "remember_interaction",
+      "description": "Store user interaction in episodic memory.",
+      "category": "memory.storage",
+      "parameters": [
+        {
+          "name": "interaction_type",
+          "type": "string",
+          "description": "Type of interaction.",
+          "required": true
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "description": "Interaction content.",
+          "required": true
+        },
+        {
+          "name": "importance",
+          "type": "number",
+          "description": "Importance score (0-1).",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Status of memory storage.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "recall_memory",
+      "description": "Recall relevant memories from episodic and semantic memory.",
+      "category": "memory.retrieval",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Query to search for relevant memories.",
+          "required": true
+        },
+        {
+          "name": "memory_types",
+          "type": "array",
+          "description": "Memory types to search (episodic, semantic, working).",
+          "required": false
+        },
+        {
+          "name": "max_results": {
+            "type": "integer",
+            "description": "Maximum number of results to return.",
+            "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Retrieved memories.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "timestamp": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}
