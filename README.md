@@ -190,6 +190,67 @@ Phase 2 provides a comprehensive toolchain for working with ADL:
 
 See [CLI Reference](docs/tools/cli.md) for complete documentation.
 
+## 🚀 Phase 3: Advanced Features (Complete)
+
+Phase 3 introduces advanced agent capabilities for production-grade multi-agent systems:
+
+### Multi-Agent Role Definitions
+- **4 Role Types**: Coordinator, Worker, Supervisor, Critic
+- **Role Capabilities**: Define what each role can do
+- **Communication Protocols**: How roles interact with each other
+- **Compatibility Checking**: Ensure roles work together correctly
+
+### Execution Constraints & Capability Negotiation
+- **5 Constraint Types**: Time, memory, resource, cost, security
+- **Capability Negotiation**: Handshake, discovery, declaration protocols
+- **Enforcement Levels**: Strict, moderate, lenient
+- **Resource Management**: Automatic constraint enforcement
+
+### Event-Driven Tool Invocation
+- **4 Event Types**: Tool, state, error, custom events
+- **Trigger Types**: Event, time, condition, composite triggers
+- **Handler Types**: Tool invocation, state update, notification, custom
+- **Subscription Models**: Direct, pattern, filtered subscriptions
+- **Routing Strategies**: Direct, broadcast, conditional routing
+
+### Advanced RAG
+- **Hierarchical Indexing**: Multi-level index structure with sub-indices
+- **Hybrid Search**: Vector + keyword search with RRF fusion
+- **Pipeline Stages**: Preprocessing, retrieval, reranking, postprocessing
+- **Reranking Models**: Cross-encoder, monot5, custom models
+- **Caching**: Memory, Redis, memcached, database caching
+
+### Memory Extensions
+- **4 Memory Types**: Episodic, semantic, working, hybrid memory
+- **Lifecycle Management**: Creation, access, update, eviction, consolidation, archival
+- **Eviction Policies**: LRU, LFU, FIFO, random, time-based policies
+- **Consolidation Strategies**: Summarization, clustering, hierarchical
+- **Privacy Controls**: PII detection, encryption, access control
+
+### LLM Settings Extensions
+- **Multi-Model Support**: Primary, fallback, and specialized models
+- **Routing Strategies**: Direct, task-based, cost-based, performance-based, adaptive
+- **Model Constraints**: Token, cost, rate, timeout limits
+- **Task-Specific Configuration**: Temperature, top-p, frequency/presence penalties per task
+- **Monitoring & Alerting**: Performance metrics, quality tracking, alert channels
+
+### Documentation
+- [Multi-Agent Roles](docs/multi-agent-roles.md)
+- [Execution Constraints](docs/execution-constraints.md)
+- [Event-Driven Tools](docs/event-driven-tools.md)
+- [Advanced RAG](docs/advanced-rag.md)
+- [Memory Extensions](docs/memory-extensions.md)
+- [LLM Settings Extensions](docs/llm-settings-extensions.md)
+
+### Examples
+- `examples/multi_agent_coordinator_v2.json`
+- `examples/multi_agent_worker_v2.json`
+- `examples/constrained_agent_v2.json`
+- `examples/event_driven_agent_v2.json`
+- `examples/advanced_rag_agent_v2.json`
+- `examples/memory_extensions_agent_v2.json`
+- `examples/llm_extensions_agent_v2.json`
+
 ---
 
 ## 🛠 Getting Started
