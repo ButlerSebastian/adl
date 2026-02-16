@@ -132,6 +132,17 @@ def create_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='Automatically fix linting issues'
     )
+    lint_parser.add_argument(
+        '--rules',
+        type=str,
+        help='Comma-separated list of rules to enable (default: all)'
+    )
+    lint_parser.add_argument(
+        '--severity',
+        choices=['error', 'warning', 'info'],
+        default='warning',
+        help='Minimum severity level (default: warning)'
+    )
 
     generate_parser = subparsers.add_parser(
         'generate',
@@ -316,28 +327,77 @@ def cmd_format(args) -> int:
 
 
 def cmd_lint(args) -> int:
-    """Lint DSL file."""
+    """Lint DSL file with rule engine and autofix support."""
     try:
         with open(args.input, 'r') as f:
             content = f.read()
 
-        issues = []
         lines = content.split('\n')
+        issues = []
+        fixes = []
+
+        severity_order = {'error': 0, 'warning': 1, 'info': 2}
+        min_severity = severity_order[args.severity]
+
+        rules = {
+            'trailing-whitespace': {
+                'severity': 'warning',
+                'check': lambda line: line.rstrip() != line,
+                'fix': lambda line: line.rstrip(),
+                'message': 'Trailing whitespace'
+            },
+            'tabs': {
+                'severity': 'error',
+                'check': lambda line: '\t' in line,
+                'fix': lambda line: line.replace('\t', '  '),
+                'message': 'Use spaces instead of tabs'
+            },
+            'line-length': {
+                'severity': 'warning',
+                'check': lambda line: len(line) > 100,
+                'fix': None,
+                'message': lambda line: f'Line too long ({len(line)} > 100)'
+            },
+            'empty-lines': {
+                'severity': 'info',
+                'check': lambda line: line.strip() == '' and line != '',
+                'fix': lambda line: '',
+                'message': 'Empty line with whitespace'
+            }
+        }
+
+        enabled_rules = args.rules.split(',') if args.rules else list(rules.keys())
 
         for i, line in enumerate(lines, 1):
-            if line.rstrip() != line:
-                issues.append(f"Line {i}: Trailing whitespace")
+            for rule_name in enabled_rules:
+                if rule_name not in rules:
+                    continue
 
-            if '\t' in line:
-                issues.append(f"Line {i}: Use spaces instead of tabs")
+                rule = rules[rule_name]
+                if severity_order[rule['severity']] < min_severity:
+                    continue
 
-            if len(line) > 100:
-                issues.append(f"Line {i}: Line too long ({len(line)} > 100)")
+                if rule['check'](line):
+                    message = rule['message'](line) if callable(rule['message']) else rule['message']
+                    issues.append(f"Line {i}: [{rule['severity'].upper()}] {message}")
+
+                    if args.fix and rule['fix']:
+                        fixes.append((i - 1, rule['fix'](line)))
 
         if issues:
             print(f"✗ Found {len(issues)} linting issue(s):", file=sys.stderr)
             for issue in issues:
                 print(f"  - {issue}", file=sys.stderr)
+
+            if args.fix and fixes:
+                for line_idx, fixed_line in fixes:
+                    lines[line_idx] = fixed_line
+
+                fixed_content = '\n'.join(lines)
+                with open(args.input, 'w') as f:
+                    f.write(fixed_content)
+                print(f"\n✓ Fixed {len(fixes)} issue(s) in {args.input}")
+
             return 1
         else:
             print(f"✓ {args.input} has no linting issues")
