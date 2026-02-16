@@ -141,25 +141,51 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def cmd_compile(args) -> int:
-    """Compile DSL to JSON Schema."""
+    """Compile DSL to JSON Schema with optional watch mode."""
     try:
         import json
+        import time
 
         parser = GrammarParser()
 
-        with open(args.input, 'r') as f:
-            dsl_content = f.read()
+        def compile_file():
+            """Compile DSL file and write output."""
+            with open(args.input, 'r') as f:
+                dsl_content = f.read()
 
-        program = parser.parse(dsl_content)
-        json_schema = parser.generate_json_schema(program)
-        json_output = json.dumps(json_schema, indent=2)
+            program = parser.parse(dsl_content)
+            json_schema = parser.generate_json_schema(program)
+            json_output = json.dumps(json_schema, indent=2)
 
-        if args.output:
-            with open(args.output, 'w') as f:
-                f.write(json_output)
-            print(f"✓ Compiled {args.input} -> {args.output}")
+            if args.output:
+                with open(args.output, 'w') as f:
+                    f.write(json_output)
+                print(f"✓ Compiled {args.input} -> {args.output}")
+            else:
+                print(json_output)
+
+            return json_schema
+
+        if args.watch:
+            print(f"👀 Watching {args.input} for changes... (Ctrl+C to stop)")
+            last_mtime = args.input.stat().st_mtime
+
+            try:
+                compile_file()
+                while True:
+                    time.sleep(1)
+                    current_mtime = args.input.stat().st_mtime
+                    if current_mtime != last_mtime:
+                        print(f"\n📝 Detected changes in {args.input}")
+                        try:
+                            compile_file()
+                            last_mtime = current_mtime
+                        except Exception as e:
+                            print(f"✗ Compilation error: {e}", file=sys.stderr)
+            except KeyboardInterrupt:
+                print("\n🛑 Stopping watch mode...")
         else:
-            print(json_output)
+            compile_file()
 
         return 0
     except Exception as e:
