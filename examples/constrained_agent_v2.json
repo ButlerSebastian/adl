@@ -1,0 +1,214 @@
+{
+  "id": "constrained-agent-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Constrained Research Agent",
+  "description": "Research agent with comprehensive execution constraints for safe and predictable operation.",
+  "role": "Research Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 2048
+  },
+  "execution_constraints": {
+    "time_constraints": {
+      "max_execution_time_ms": 60000,
+      "max_tool_invocation_time_ms": 10000,
+      "max_llm_inference_time_ms": 15000,
+      "timeout_action": "terminate"
+    },
+    "memory_constraints": {
+      "max_memory_mb": 1024,
+      "max_context_tokens": 8000,
+      "max_tool_output_size_mb": 20,
+      "memory_eviction_policy": "lru"
+    },
+    "resource_quotas": {
+      "max_llm_calls_per_hour": 100,
+      "max_tool_invocations_per_task": 50,
+      "max_network_requests_per_minute": 20,
+      "max_file_operations_per_task": 10
+    },
+    "cost_constraints": {
+      "max_cost_per_task_usd": 2.0,
+      "max_cost_per_hour_usd": 10.0,
+      "cost_tracking_enabled": true,
+      "cost_alert_threshold_usd": 1.5
+    },
+    "security_constraints": {
+      "allowed_domains": ["api.example.com", "docs.example.com"],
+      "blocked_domains": ["malicious.com", "spam.com"],
+      "max_file_size_mb": 50,
+      "allowed_file_types": [".json", ".txt", ".csv", ".pdf"],
+      "require_encryption": true
+    },
+    "capability_negotiation": {
+      "enabled": true,
+      "protocol": "handshake",
+      "timeout_ms": 5000,
+      "fallback_strategy": "degrade"
+    },
+    "capability_requirements": {
+      "required": [
+        {
+          "name": "llm_inference",
+          "version": ">=1.0.0",
+          "provider": "openai"
+        },
+        {
+          "name": "web_search",
+          "version": ">=2.0.0"
+        }
+      ],
+      "optional": [
+        {
+          "name": "code_execution",
+          "version": ">=1.0.0"
+        },
+        {
+          "name": "file_processing",
+          "version": ">=1.5.0"
+        }
+      ]
+    },
+    "enforcement": {
+      "level": "strict",
+      "violation_action": "terminate",
+      "logging_enabled": true,
+      "alert_on_violation": true
+    }
+  },
+  "tools": [
+    {
+      "name": "search_web",
+      "description": "Search the web for information with domain restrictions.",
+      "category": "data_access.web_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of results to return.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "read_document",
+      "description": "Read and extract content from a document with size restrictions.",
+      "category": "data_access.document_processing",
+      "parameters": [
+        {
+          "name": "document_url",
+          "type": "string",
+          "description": "URL of the document to read.",
+          "required": true
+        },
+        {
+          "name": "extract_fields",
+          "type": "array",
+          "description": "Fields to extract from the document.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Extracted document content.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            },
+            "extracted_fields": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "execute_code",
+      "description": "Execute code in a sandboxed environment with resource limits.",
+      "category": "computation.code_execution",
+      "parameters": [
+        {
+          "name": "code",
+          "type": "string",
+          "description": "Code to execute.",
+          "required": true
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "description": "Programming language.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ObjectResult",
+        "description": "Execution result.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "output": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "execution_time_ms": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}
