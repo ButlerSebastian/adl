@@ -511,3 +511,203 @@ echo "All ADL files are valid!"
 - **Development**: Catch errors early
 - **Code Review**: Validate changes
 - **Documentation**: Verify examples are valid
+
+---
+
+## adl-format
+
+Format ADL files according to style guidelines.
+
+### Usage
+
+```bash
+adl-format [OPTIONS] INPUT_FILE
+```
+
+### Options
+
+- `-o, --output FILE` - Output file path (default: overwrite input)
+- `-c, --check` - Check if file is formatted (no changes)
+- `--indent-size N` - Indentation size (default: 2)
+- `--insert-spaces` - Use spaces instead of tabs (default: true)
+- `--use-tabs` - Use tabs instead of spaces
+- `--max-line-length N` - Maximum line length (default: 100)
+- `-v, --verbose` - Enable verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+#### Format ADL file (in-place)
+
+```bash
+adl-format my-agent.adl
+```
+
+#### Format to new file
+
+```bash
+adl-format my-agent.adl -o formatted-agent.adl
+```
+
+#### Check if file is formatted
+
+```bash
+adl-format my-agent.adl --check
+```
+
+#### Format with custom indentation
+
+```bash
+adl-format my-agent.adl --indent-size 4
+```
+
+#### Format with tabs
+
+```bash
+adl-format my-agent.adl --use-tabs
+```
+
+#### Format with custom line length
+
+```bash
+adl-format my-agent.adl --max-line-length 120
+```
+
+### Formatting Rules
+
+The formatter applies the following rules:
+
+1. **Indentation**
+   - Consistent indentation (2 spaces by default)
+   - Nested structures indented properly
+   - No mixed tabs and spaces
+
+2. **Spacing**
+   - Spaces around operators
+   - Spaces after commas
+   - No trailing whitespace
+   - Single blank line between sections
+
+3. **Line Length**
+   - Maximum 100 characters per line (configurable)
+   - Long lines wrapped appropriately
+   - Break at logical points
+
+4. **Ordering**
+   - Fields in consistent order
+   - Imports sorted alphabetically
+   - Sections in standard order
+
+5. **Comments**
+   - Consistent comment style
+   - Proper indentation
+   - No orphaned comments
+
+### Output
+
+#### Success
+
+```bash
+adl-format my-agent.adl
+# Formatted: my-agent.adl
+# Exit code: 0
+```
+
+#### Check - Formatted
+
+```bash
+adl-format my-agent.adl --check
+# Formatted: my-agent.adl
+# Exit code: 0
+```
+
+#### Check - Not Formatted
+
+```bash
+adl-format my-agent.adl --check
+# Not formatted: my-agent.adl
+# Exit code: 1
+```
+
+#### Verbose Output
+
+```bash
+adl-format my-agent.adl -v
+# Formatting my-agent.adl...
+# - Fixed indentation
+# - Removed trailing whitespace
+# - Wrapped long lines
+# Formatted: my-agent.adl
+```
+
+### Exit Codes
+
+- `0` - Formatted successfully (or already formatted in check mode)
+- `1` - Not formatted (in check mode)
+- `4` - File not found
+- `5` - Parse error
+
+### Best Practices
+
+1. **Format before committing** - Keep code clean
+2. **Use check mode in CI** - Ensure consistent formatting
+3. **Configure team standards** - Use config file for team settings
+4. **Auto-format on save** - Configure editor to format on save
+
+### Editor Integration
+
+#### VS Code
+
+Add to `.vscode/settings.json`:
+
+```json
+{
+  "editor.formatOnSave": true,
+  "[adl]": {
+    "editor.defaultFormatter": "adl.formatter",
+    "editor.formatOnSave": true
+  }
+}
+```
+
+#### Vim
+
+Add to `.vimrc`:
+
+```vim
+autocmd BufWritePre *.adl :!adl-format %
+```
+
+#### Emacs
+
+Add to `.emacs`:
+
+```elisp
+(add-hook 'before-save-hook
+          (lambda ()
+            (when (eq major-mode 'adl-mode)
+              (shell-command (concat "adl-format " (buffer-file-name))))))
+```
+
+### CI/CD Integration
+
+```bash
+#!/bin/bash
+set -e
+
+# Check formatting of all ADL files
+for file in $(find . -name "*.adl"); do
+    echo "Checking formatting of $file..."
+    adl-format "$file" --check
+done
+
+echo "All ADL files are properly formatted!"
+```
+
+### Use Cases
+
+- **Pre-commit Hooks**: Format before committing
+- **CI/CD Pipelines**: Ensure consistent formatting
+- **Team Collaboration**: Maintain code style
+- **Code Review**: Reduce formatting noise
+- **Refactoring**: Clean up code style
