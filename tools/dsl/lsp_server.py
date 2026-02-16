@@ -169,6 +169,88 @@ class ADLLanguageServer(LanguageServer):
             logger.error(f"Failed to format document {document.uri}: {e}")
             return document.source
 
+    @default_language_server_protocol.feature("textDocument/completion")
+    async def completion(self, params: CompletionParams) -> List[CompletionItem]:
+        """Provide completion items."""
+        document = self.workspace.get_document(params.text_document.uri)
+        if not document:
+            return []
+
+        line = document.lines[params.position.line]
+        char_before = line[:params.position.character]
+
+        items = []
+
+        if char_before.endswith(":"):
+            items.extend(self._get_type_completions())
+        elif char_before.endswith(" ") or char_before.endswith("\n"):
+            items.extend(self._get_keyword_completions())
+            items.extend(self._get_boolean_completions())
+        else:
+            items.extend(self._get_all_completions())
+
+        return items
+
+    def _get_keyword_completions(self) -> List[CompletionItem]:
+        """Get keyword completions."""
+        keywords = [
+            "type", "enum", "agent", "import", "description",
+            "fields", "values", "tools", "rag", "llm", "llm_settings",
+            "permissions", "dependencies", "governance", "name",
+            "role", "owner", "version", "category", "subcategory",
+            "parameters", "returns", "invocation", "type", "required",
+            "minLength", "maxLength", "minimum", "maximum", "pattern",
+            "enum", "default", "description"
+        ]
+
+        return [
+            CompletionItem(
+                label=keyword,
+                kind=CompletionItemKind.Keyword,
+                detail="ADL keyword"
+            )
+            for keyword in keywords
+        ]
+
+    def _get_type_completions(self) -> List[CompletionItem]:
+        """Get type completions."""
+        types = [
+            "string", "number", "integer", "boolean", "array",
+            "object", "any", "null", "datetime", "uri", "email"
+        ]
+
+        return [
+            CompletionItem(
+                label=type_name,
+                kind=CompletionItemKind.Class,
+                detail="ADL type"
+            )
+            for type_name in types
+        ]
+
+    def _get_boolean_completions(self) -> List[CompletionItem]:
+        """Get boolean completions."""
+        return [
+            CompletionItem(
+                label="true",
+                kind=CompletionItemKind.Value,
+                detail="Boolean value"
+            ),
+            CompletionItem(
+                label="false",
+                kind=CompletionItemKind.Value,
+                detail="Boolean value"
+            )
+        ]
+
+    def _get_all_completions(self) -> List[CompletionItem]:
+        """Get all completions."""
+        items = []
+        items.extend(self._get_keyword_completions())
+        items.extend(self._get_type_completions())
+        items.extend(self._get_boolean_completions())
+        return items
+
 
 def create_server() -> ADLLanguageServer:
     """Create and return ADL Language Server instance."""
