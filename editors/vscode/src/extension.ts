@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ADLDiagnosticsProvider } from './diagnostics';
+import { ADLCompletionProvider } from './completion';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('ADL DSL extension is now active!');
@@ -30,6 +31,17 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     vscode.workspace.textDocuments.forEach(updateDiagnostics);
+
+    const completionProvider = new ADLCompletionProvider();
+    context.subscriptions.push(
+        vscode.languages.registerCompletionItemProvider(
+            'adl',
+            completionProvider,
+            ':',
+            ' ',
+            '\n'
+        )
+    );
 }
 
 export function deactivate() {

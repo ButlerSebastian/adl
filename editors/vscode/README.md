@@ -6,6 +6,7 @@ Syntax highlighting and language support for ADL (Agent Definition Language).
 
 - **Syntax Highlighting**: Full syntax highlighting for ADL files (.adl)
 - **Error Diagnostics**: Real-time syntax and validation error detection
+- **Auto-completion**: Intelligent code completion for keywords, types, and fields
 - **Color Theme**: Custom dark theme optimized for ADL development
 - **Language Configuration**: Auto-closing brackets, comments, and more
 
@@ -71,6 +72,47 @@ Errors are displayed in:
 - Red squiggle underlines in the editor
 - Problems panel (View → Problems)
 - Output channel (View → Output → ADL Diagnostics)
+
+## Auto-completion
+
+The extension provides intelligent code completion for ADL files:
+
+### Completion Triggers
+- Type `:` to trigger type completions
+- Type ` ` (space) to trigger keyword completions
+- Press `Ctrl+Space` to manually trigger completions
+
+### Completion Items
+
+#### Keywords
+- `import`, `enum`, `type`, `agent`, `as`, `module`, `export`, `validation`
+
+#### Primitive Types
+- `string`, `integer`, `number`, `boolean`, `object`, `array`, `any`, `null`
+
+#### Array Types
+- `string[]`, `integer[]`, `number[]`, `boolean[]`, etc.
+
+#### Optional Types
+- `string?`, `integer?`, `number?`, `boolean?`, etc.
+
+#### Boolean Literals
+- `true`, `false`
+
+#### Common Fields
+- `name`, `description`, `version`, `id`, `config`, `parameters`, `returns`, `required`, `default`, `minLength`, `maxLength`, `minimum`, `maximum`, `pattern`, `enum`
+
+### Example Usage
+
+```adl
+type Person {
+  name: string    # Type completion after ':'
+  age: integer    # Type completion after ':'
+  email?: string  # Optional type completion
+  tags: string[]  # Array type completion
+  active: true    # Boolean literal completion
+}
+```
 
 ## Example
 

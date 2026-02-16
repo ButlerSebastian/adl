@@ -37,6 +37,7 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const diagnostics_1 = require("./diagnostics");
+const completion_1 = require("./completion");
 function activate(context) {
     console.log('ADL DSL extension is now active!');
     const diagnosticsProvider = new diagnostics_1.ADLDiagnosticsProvider(context);
@@ -54,6 +55,8 @@ function activate(context) {
     }));
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(updateDiagnostics));
     vscode.workspace.textDocuments.forEach(updateDiagnostics);
+    const completionProvider = new completion_1.ADLCompletionProvider();
+    context.subscriptions.push(vscode.languages.registerCompletionItemProvider('adl', completionProvider, ':', ' ', '\n'));
 }
 function deactivate() {
     console.log('ADL DSL extension is now deactivated!');
