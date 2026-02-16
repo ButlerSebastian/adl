@@ -29,7 +29,12 @@ try:
         DiagnosticSeverity,
         Position,
         Range,
+        DidOpenTextDocumentParams,
+        DidChangeTextDocumentParams,
+        DidCloseTextDocumentParams,
+        PublishDiagnosticsParams,
     )
+    from pygls.protocol import default_language_server_protocol
 except ImportError:
     raise ImportError(
         "pygls is required for LSP server. Install with: pip install pygls"
@@ -76,21 +81,38 @@ class ADLLanguageServer(LanguageServer):
 
         return InitializeResult(capabilities=capabilities)
 
-    def did_open(self, document: Document):
+    @default_language_server_protocol.feature("textDocument/didOpen")
+    async def did_open(self, params: DidOpenTextDocumentParams):
         """Handle document open event."""
+        document = self.workspace.get_document(params.text_document.uri)
         logger.info(f"Document opened: {document.uri}")
         self.documents[document.uri] = document
+        diagnostics = self.validate_document(document)
+        self.lsp.publish_diagnostics(
+            PublishDiagnosticsParams(uri=document.uri, diagnostics=diagnostics)
+        )
 
-    def did_change(self, document: Document):
+    @default_language_server_protocol.feature("textDocument/didChange")
+    async def did_change(self, params: DidChangeTextDocumentParams):
         """Handle document change event."""
+        document = self.workspace.get_document(params.text_document.uri)
         logger.debug(f"Document changed: {document.uri}")
         self.documents[document.uri] = document
+        diagnostics = self.validate_document(document)
+        self.lsp.publish_diagnostics(
+            PublishDiagnosticsParams(uri=document.uri, diagnostics=diagnostics)
+        )
 
-    def did_close(self, document: Document):
+    @default_language_server_protocol.feature("textDocument/didClose")
+    async def did_close(self, params: DidCloseTextDocumentParams):
         """Handle document close event."""
+        document = self.workspace.get_document(params.text_document.uri)
         logger.info(f"Document closed: {document.uri}")
         if document.uri in self.documents:
             del self.documents[document.uri]
+        self.lsp.publish_diagnostics(
+            PublishDiagnosticsParams(uri=document.uri, diagnostics=[])
+        )
 
     def get_document(self, uri: str) -> Optional[Document]:
         """Get document by URI."""
@@ -113,7 +135,7 @@ class ADLLanguageServer(LanguageServer):
             return []
 
         try:
-            issues = self.linter.lint(document.source)
+            issues = self.linter.lint_content(document.source)
             diagnostics = []
 
             for issue in issues:
@@ -121,12 +143,13 @@ class ADLLanguageServer(LanguageServer):
                 diagnostics.append(
                     Diagnostic(
                         range=Range(
-                            start=Position(line=issue.line - 1, character=issue.column - 1),
-                            end=Position(line=issue.line - 1, character=issue.column - 1 + len(issue.text) if issue.text else 0),
+                            start=Position(line=issue.line_number - 1, character=0),
+                            end=Position(line=issue.line_number - 1, character=100),
                         ),
                         message=issue.message,
                         severity=severity,
                         source="adl-linter",
+                        code=issue.rule_name,
                     )
                 )
 
