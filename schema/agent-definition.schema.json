@@ -1696,6 +1696,83 @@
         "nodes",
         "edges"
       ]
+    },
+    "policy": {
+      "type": "object",
+      "description": "Policy-as-Code configuration using OPA/Rego for declarative access control and security policies.",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique policy identifier."
+        },
+        "name": {
+          "type": "string",
+          "description": "Policy name."
+        },
+        "version": {
+          "type": "string",
+          "description": "Policy version (semantic versioning).",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Policy description."
+        },
+        "rego": {
+          "type": "string",
+          "description": "Rego policy code."
+        },
+        "enforcement": {
+          "type": "object",
+          "description": "Policy enforcement configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "strict",
+                "moderate",
+                "lenient"
+              ],
+              "description": "Enforcement mode."
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "deny",
+                "warn",
+                "log",
+                "allow"
+              ],
+              "description": "Enforcement action."
+            },
+            "audit_log": {
+              "type": "boolean",
+              "description": "Enable audit logging."
+            }
+          },
+          "required": [
+            "mode",
+            "action"
+          ]
+        },
+        "data": {
+          "type": "object",
+          "description": "Policy data (roles, permissions, etc.)."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional policy metadata."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "version",
+        "rego",
+        "enforcement"
+      ]
     }
   },
   "required": [
