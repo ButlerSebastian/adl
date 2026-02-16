@@ -131,7 +131,6 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         field_names: Set[str] = set()
         
         for field in node.fields:
-            # Check for duplicate field names
             if field.name in field_names:
                 self.errors.append(ValidationError(
                     message=f"Duplicate field name: {field.name}",
@@ -141,8 +140,13 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
             else:
                 field_names.add(field.name)
             
-            # Validate field type
             self._validate_type(field.type)
+        
+        if node.description:
+            self._validate_string_length(node.description, "description", 1, 5000)
+        
+        if node.owner:
+            self._validate_string_length(node.owner, "owner", 1, 100)
         
         return self.errors
     
@@ -185,6 +189,37 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         elif isinstance(type_node, OptionalType):
             # Validate inner type
             self._validate_type(type_node.inner_type)
+
+    def _validate_string_length(self, value: str, field_name: str, min_length: int, max_length: int) -> None:
+        """Validate string length constraints.
+        
+        Args:
+            value: The string value to validate
+            field_name: Name of the field being validated
+            min_length: Minimum allowed length
+            max_length: Maximum allowed length
+        """
+        if not isinstance(value, str):
+            self.errors.append(ValidationError(
+                message=f"{field_name} must be a string",
+                location=SourceLocation(1, 0),  # Default location for non-AST values
+                error_code="INVALID_TYPE"
+            ))
+            return
+        
+        if len(value) < min_length:
+            self.errors.append(ValidationError(
+                message=f"{field_name} must be at least {min_length} character(s), got {len(value)}",
+                location=SourceLocation(1, 0),
+                error_code="STRING_TOO_SHORT"
+            ))
+        
+        if len(value) > max_length:
+            self.errors.append(ValidationError(
+                message=f"{field_name} must be at most {max_length} character(s), got {len(value)}",
+                location=SourceLocation(1, 0),
+                error_code="STRING_TOO_LONG"
+            ))
     
     def visit_default(self, node) -> List[ValidationError]:
         """Default visitor for unhandled node types."""
@@ -224,6 +259,26 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
 
     def visit_ConstrainedType(self, node: ConstrainedType) -> List[ValidationError]:
         """Visit constrained type node."""
+        return self.errors
+
+    def visit_EnforcementDef(self, node) -> List[ValidationError]:
+        """Visit enforcement definition node."""
+        return self.errors
+
+    def visit_PolicyDef(self, node) -> List[ValidationError]:
+        """Visit policy definition node."""
+        return self.errors
+
+    def visit_WorkflowDef(self, node) -> List[ValidationError]:
+        """Visit workflow definition node."""
+        return self.errors
+
+    def visit_WorkflowNodeDef(self, node) -> List[ValidationError]:
+        """Visit workflow node definition node."""
+        return self.errors
+
+    def visit_WorkflowEdgeDef(self, node) -> List[ValidationError]:
+        """Visit workflow edge definition node."""
         return self.errors
 
     def visit_TypeBody(self, node) -> List[ValidationError]:

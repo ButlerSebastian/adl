@@ -175,7 +175,9 @@ class ConstrainedType(ASTNode):
 class AgentDef(ASTNode):
     """Agent definition"""
     name: str
-    fields: List[FieldDef]
+    description: Optional[str] = None
+    owner: Optional[str] = None
+    fields: List[FieldDef] = field(default_factory=list)
 
 
 # ============================================

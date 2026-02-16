@@ -597,26 +597,27 @@ class ADLTransformer(Transformer):
         else:
             raise ValueError(f"Unknown primary type: {children[0]}")
 
-    @v_args(meta=True)
-    def agent_def(self, meta, children: List) -> AgentDef:
-        """
-        Transform an agent definition.
-
-        Args:
-            meta: Lark meta object
-            children: List of child nodes [AGENT, IDENTIFIER, LBRACE, field_list, RBRACE]
-
-        Returns:
-            AgentDef AST node
-        """
-        name = children[1].value
+@v_args(meta=True)
+def agent_def(self, meta, children: List) -> AgentDef:
+    name = children[1]
+    description = None
+    owner = None
+    fields = []
+    
+    if len(children) > 3:
+        description = children[2]
+        owner = children[3]
+        fields = children[4]
+    else:
         fields = children[3]
-
-        return AgentDef(
-            name=name,
-            fields=fields,
-            loc=self._get_loc(meta),
-        )
+    
+    return AgentDef(
+        name=name,
+        description=description,
+        owner=owner,
+        fields=fields,
+        loc=self._get_loc(meta),
+    )
 
     # Default handler for any unmatched tokens
     def DEFAULT(self, token: Token) -> Token:

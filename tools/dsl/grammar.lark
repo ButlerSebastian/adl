@@ -149,7 +149,7 @@ primary_type: PRIMITIVE_STRING
 // RULES - Agent
 // ============================================
 
-agent_def: AGENT IDENTIFIER LBRACE field_list RBRACE
+agent_def: AGENT IDENTIFIER (STRING STRING)? LBRACE field_list RBRACE
 
 // ============================================
 // DIRECTIVES

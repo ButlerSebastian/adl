@@ -256,42 +256,99 @@ class WorkflowValidator:
                     ))
 
     def _validate_cycles(self, workflow: Dict[str, Any]) -> None:
-        """Detect cycles using Kahn's algorithm."""
+        """Detect cycles using DFS and report detailed cycle paths."""
         nodes = workflow.get("nodes", {})
         edges = workflow.get("edges", [])
 
         if not nodes or not edges:
             return
 
-        adjacency = defaultdict(list)
-        in_degree = {node_id: 0 for node_id in nodes}
-
+        # Build adjacency list from edges
+        adj = {node_id: [] for node_id in nodes}
         for edge in edges:
             source = edge.get("source")
             target = edge.get("target")
 
             if source and target and source in nodes and target in nodes:
-                adjacency[source].append(target)
-                in_degree[target] += 1
+                adj[source].append(target)
 
-        queue = deque([node_id for node_id, degree in in_degree.items() if degree == 0])
-        result = []
+        # DFS with visited and recursion stack to detect cycles
+        visited = set()
+        rec_stack = set()
+        path = []
 
-        while queue:
-            current = queue.popleft()
-            result.append(current)
+        def dfs(node):
+            """DFS traversal to detect cycles."""
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
 
-            for neighbor in adjacency[current]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    queue.append(neighbor)
+            for neighbor in adj.get(node, []):
+                if neighbor not in visited:
+                    if dfs(neighbor):
+                        return True
+                elif neighbor in rec_stack:
+                    # Cycle found - extract the cycle path
+                    cycle_start = path.index(neighbor)
+                    cycle = path[cycle_start:] + [neighbor]
+                    self.errors.append(ValidationError(
+                        field="workflow",
+                        message=f"Cycle detected in workflow: {' -> '.join(cycle)}"
+                    ))
+                    return True
 
-        if len(result) != len(nodes):
-            cycle_nodes = set(nodes.keys()) - set(result)
-            self.errors.append(ValidationError(
-                field="workflow",
-                message=f"Workflow contains a cycle involving nodes: {', '.join(sorted(cycle_nodes))}"
-            ))
+            rec_stack.remove(node)
+            path.pop()
+            return False
+
+        # Run DFS from each unvisited node
+        for node in nodes:
+            if node not in visited:
+                dfs(node)
+
+        # Also check for cycles in the reverse direction (edges might be bidirectional)
+        # Build reverse adjacency list
+        reverse_adj = defaultdict(list)
+        for edge in edges:
+            source = edge.get("source")
+            target = edge.get("target")
+
+            if source and target and source in nodes and target in nodes:
+                reverse_adj[target].append(source)
+
+        # Reset visited for reverse traversal
+        visited = set()
+        rec_stack = set()
+        path = []
+
+        def dfs_reverse(node):
+            """DFS traversal on reverse graph to detect cycles."""
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
+
+            for neighbor in reverse_adj.get(node, []):
+                if neighbor not in visited:
+                    if dfs_reverse(neighbor):
+                        return True
+                elif neighbor in rec_stack:
+                    # Cycle found in reverse direction
+                    cycle_start = path.index(neighbor)
+                    cycle = path[cycle_start:] + [neighbor]
+                    self.errors.append(ValidationError(
+                        field="workflow",
+                        message=f"Cycle detected in workflow (reverse): {' -> '.join(cycle)}"
+                    ))
+                    return True
+
+            rec_stack.remove(node)
+            path.pop()
+            return False
+
+        # Run DFS on reverse graph
+        for node in nodes:
+            if node not in visited:
+                dfs_reverse(node)
 
     def _validate_connections(self, workflow: Dict[str, Any]) -> None:
         """Validate edge connections."""
