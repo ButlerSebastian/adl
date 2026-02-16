@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
-    PrimitiveType, OptionalType, ASTVisitor, SourceLocation
+    PrimitiveType, OptionalType, ASTVisitor, SourceLocation,
+    WorkflowDef, WorkflowNodeDef, WorkflowEdgeDef, PolicyDef, EnforcementDef
 )
 
 
@@ -92,7 +93,10 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
     def visit_TypeDef(self, node: TypeDef) -> List[ValidationError]:
         """Validate a type definition."""
         field_names: Set[str] = set()
-        
+
+        if node.body is None:
+            return self.errors
+
         for field in node.body.fields:
             # Check for duplicate field names
             if field.name in field_names:
@@ -202,7 +206,7 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         if not isinstance(value, str):
             self.errors.append(ValidationError(
                 message=f"{field_name} must be a string",
-                location=SourceLocation(1, 0),  # Default location for non-AST values
+                location=SourceLocation(1, 0, 1, 0),  # Default location for non-AST values
                 error_code="INVALID_TYPE"
             ))
             return
@@ -210,14 +214,14 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         if len(value) < min_length:
             self.errors.append(ValidationError(
                 message=f"{field_name} must be at least {min_length} character(s), got {len(value)}",
-                location=SourceLocation(1, 0),
+                location=SourceLocation(1, 0, 1, 0),
                 error_code="STRING_TOO_SHORT"
             ))
         
         if len(value) > max_length:
             self.errors.append(ValidationError(
                 message=f"{field_name} must be at most {max_length} character(s), got {len(value)}",
-                location=SourceLocation(1, 0),
+                location=SourceLocation(1, 0, 1, 0),
                 error_code="STRING_TOO_LONG"
             ))
     
@@ -261,24 +265,53 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         """Visit constrained type node."""
         return self.errors
 
-    def visit_EnforcementDef(self, node) -> List[ValidationError]:
-        """Visit enforcement definition node."""
+    def visit_EnforcementDef(self, node: EnforcementDef) -> List[ValidationError]:
+        """Validate enforcement definition."""
+        # Validate enforcement mode
+        valid_modes = {"strict", "moderate", "lenient"}
+        if node.mode not in valid_modes:
+            self.errors.append(ValidationError(
+                message=f"Invalid enforcement mode: {node.mode}. Must be one of {valid_modes}",
+                location=node.loc,
+                error_code="INVALID_ENFORCEMENT_MODE"
+            ))
+
+        # Validate enforcement action
+        valid_actions = {"deny", "warn", "log", "allow"}
+        if node.action not in valid_actions:
+            self.errors.append(ValidationError(
+                message=f"Invalid enforcement action: {node.action}. Must be one of {valid_actions}",
+                location=node.loc,
+                error_code="INVALID_ENFORCEMENT_ACTION"
+            ))
+
         return self.errors
 
-    def visit_PolicyDef(self, node) -> List[ValidationError]:
-        """Visit policy definition node."""
+    def visit_PolicyDef(self, node: PolicyDef) -> List[ValidationError]:
+        """Validate policy definition."""
+        policy_ids: Set[str] = set()
+
+        # Check for duplicate policy IDs
+        if node.id in policy_ids:
+            self.errors.append(ValidationError(
+                message=f"Duplicate policy ID: {node.id}",
+                location=node.loc,
+                error_code="DUPLICATE_POLICY_ID"
+            ))
+        else:
+            policy_ids.add(node.id)
+
+        # Validate enforcement definition
+        self._validate_enforcement(node.enforcement)
+
         return self.errors
 
-    def visit_WorkflowDef(self, node) -> List[ValidationError]:
-        """Visit workflow definition node."""
+    def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> List[ValidationError]:
+        """Validate workflow node definition."""
         return self.errors
 
-    def visit_WorkflowNodeDef(self, node) -> List[ValidationError]:
-        """Visit workflow node definition node."""
-        return self.errors
-
-    def visit_WorkflowEdgeDef(self, node) -> List[ValidationError]:
-        """Visit workflow edge definition node."""
+    def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> List[ValidationError]:
+        """Validate workflow edge definition."""
         return self.errors
 
     def visit_TypeBody(self, node) -> List[ValidationError]:
@@ -288,3 +321,68 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
     def visit_FieldList(self, node) -> List[ValidationError]:
         """Visit field list node."""
         return self.errors
+
+    def visit_WorkflowDef(self, node: WorkflowDef) -> List[ValidationError]:
+        """Validate workflow definition."""
+        node_ids: Set[str] = set()
+        edge_errors: List[ValidationError] = []
+
+        # Check for duplicate node IDs
+        for node_id, node_obj in node.nodes.items():
+            if node_id in node_ids:
+                self.errors.append(ValidationError(
+                    message=f"Duplicate node ID: {node_id}",
+                    location=node_obj.loc,
+                    error_code="DUPLICATE_NODE_ID"
+                ))
+            else:
+                node_ids.add(node_id)
+
+        # Check for invalid edge references
+        for edge in node.edges:
+            if edge.source not in node.nodes:
+                edge_errors.append(ValidationError(
+                    message=f"Edge references non-existent source node: {edge.source}",
+                    location=edge.loc,
+                    error_code="INVALID_EDGE_REFERENCE"
+                ))
+            if edge.target not in node.nodes:
+                edge_errors.append(ValidationError(
+                    message=f"Edge references non-existent target node: {edge.target}",
+                    location=edge.loc,
+                    error_code="INVALID_EDGE_REFERENCE"
+                ))
+
+        self.errors.extend(edge_errors)
+        return self.errors
+
+        # Check for invalid edge references
+        for edge in node.edges:
+            if edge.source not in node.nodes:
+                edge_errors.append(ValidationError(
+                    message=f"Edge references non-existent source node: {edge.source}",
+                    location=edge.loc,
+                    error_code="INVALID_EDGE_REFERENCE"
+                ))
+            if edge.target not in node.nodes:
+                edge_errors.append(ValidationError(
+                    message=f"Edge references non-existent target node: {edge.target}",
+                    location=edge.loc,
+                    error_code="INVALID_EDGE_REFERENCE"
+                ))
+
+        self.errors.extend(edge_errors)
+        return self.errors
+
+    def _validate_enforcement(self, enforcement: EnforcementDef) -> None:
+        """Validate enforcement definition."""
+        # This is a helper method that calls the visitor
+        enforcement.accept(self)
+
+    def validate_workflow(self, workflow: WorkflowDef) -> List[ValidationError]:
+        """Validate workflow definition."""
+        return workflow.accept(self)
+
+    def validate_policy(self, policy: PolicyDef) -> List[ValidationError]:
+        """Validate policy definition."""
+        return policy.accept(self)
