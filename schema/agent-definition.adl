@@ -132,7 +132,7 @@ type ToolParameter {
   name: string
   type: string
   description: string
-  required: boolean
+  required?: boolean
   default?: string | number | boolean | object | array | null
   enum?: any[]
   minimum?: number
@@ -149,9 +149,6 @@ type ToolParameter {
   properties?: object
   required_properties?: string[]
   uniqueItems?: boolean
-  oneOf?: any[]
-  anyOf?: any[]
-  allOf?: any[]
 }
 
 type ToolReturnSchema {

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/agent-definition.json",
+  "title": "TestAgent",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "\"^[a-zA-Z0-9_-]+$\""
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10
+    },
+    "role": {
+      "type": "string"
+    },
+    "llm": {
+      "type": "string"
+    },
+    "llm_settings": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "rag": {
+      "type": "array",
+      "items": {},
+      "minItems": 0
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "name",
+    "description",
+    "role",
+    "llm",
+    "llm_settings",
+    "tools",
+    "rag"
+  ],
+  "additionalProperties": false
+}

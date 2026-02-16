@@ -14,6 +14,14 @@ from dataclasses import dataclass, field
 
 
 @dataclass
+class ValidationRule:
+    name: str
+    rule: str
+    message: str
+    field: Optional[str] = None
+    type: str = "field"  # "field", "cross-field", "custom"
+
+@dataclass
 class TypeDefinition:
     name: str
     base_type: str
@@ -22,6 +30,7 @@ class TypeDefinition:
     optional: List[str] = field(default_factory=list)
     enum_values: List[str] = field(default_factory=list)
     constraints: Dict[str, Any] = field(default_factory=dict)
+    validation_rules: List[ValidationRule] = field(default_factory=list)
     is_array: bool = False
     array_item_type: Optional[str] = None
 
@@ -33,6 +42,7 @@ class ADLDSLCompilerV2:
         self.types: Dict[str, TypeDefinition] = {}
         self.enums: Dict[str, List[str]] = {}
         self.imports: List[str] = []
+        self.validation_rules: List[ValidationRule] = []
         self.current_module: Optional[str] = None
         self.import_cache: Dict[str, Dict[str, Any]] = {}  # Cache for resolved imports
         self.resolving: Set[str] = set()  # Track currently resolving imports (for circular dependency detection)
@@ -52,6 +62,7 @@ class ADLDSLCompilerV2:
         self._resolve_imports(file_path_obj)
         self._parse_enums(content)
         self._parse_types(content)
+        self._parse_validation_rules(content)
         agent_def = self._parse_agent(content)
         
         return agent_def
@@ -88,6 +99,8 @@ class ADLDSLCompilerV2:
         if import_path.startswith('./') or import_path.startswith('../'):
             resolved_path = (current_file.parent / import_path).resolve()
         else:
+            if self.project_root is None:
+                raise ValueError("Project root not set. Call parse_file() first.")
             resolved_path = (self.project_root / import_path).resolve()
         
         imported_data = {'types': {}, 'enums': {}}
@@ -177,7 +190,6 @@ class ADLDSLCompilerV2:
         return imported_data
     
     def _load_json_import(self, file_path: Path) -> Dict[str, Any]:
-        """Load types from a JSON component file."""
         with open(file_path, 'r') as f:
             json_data = json.load(f)
         
@@ -196,9 +208,6 @@ class ADLDSLCompilerV2:
             properties = json_data.get('properties', {})
             for prop_name, prop_schema in properties.items():
                 imported_data['types'][type_name]['properties'][prop_name] = prop_schema
-                
-                if prop_name not in json_data.get('required', []):
-                    imported_data['types'][type_name]['optional'].append(prop_name)
         
         return imported_data
     
@@ -366,6 +375,75 @@ class ADLDSLCompilerV2:
             'required': required
         }
     
+    def _parse_validation_rules(self, content: str):
+        """Parse validation rules."""
+        validation_pattern = r'validation\s*\{([^}]+)\}'
+        match = re.search(validation_pattern, content, re.MULTILINE | re.DOTALL)
+        
+        if not match:
+            return
+        
+        validation_body = match.group(1)
+        lines = [line.strip() for line in validation_body.split('\n') if line.strip()]
+        
+        for line in lines:
+            if ':' in line:
+                parts = line.split(':', 1)
+                field_name = parts[0].strip()
+                rule_text = parts[1].strip()
+                
+                # Check if it's a named validation rule (likely cross-field)
+                if field_name.startswith('validate_'):
+                    rule_name = field_name[9:]  # Remove 'validate_' prefix
+                    # Parse custom validation rule
+                    if '(' in rule_text and ')' in rule_text:
+                        rule_parts = rule_text.split('(', 1)
+                        rule_type = rule_parts[0].strip()
+                        rule_params = rule_parts[1].rstrip(')').strip()
+                        
+                        validation_rule = ValidationRule(
+                            name=rule_name,
+                            rule=rule_text,
+                            message=f"Custom validation: {rule_text}",
+                            type="cross-field"
+                        )
+                        self.validation_rules.append(validation_rule)
+                else:
+                    # Parse field validation rules
+                    rules = [r.strip() for r in rule_text.split(',')]
+                    for rule in rules:
+                        if '(' in rule and ')' in rule:
+                            rule_parts = rule.split('(', 1)
+                            rule_type = rule_parts[0].strip()
+                            rule_params = rule_parts[1].rstrip(')').strip()
+                            
+                            validation_rule = ValidationRule(
+                                name=f"{field_name}_{rule_type}",
+                                rule=rule,
+                                message=f"{field_name} must satisfy {rule}",
+                                field=field_name,
+                                type="field"
+                            )
+                            self.validation_rules.append(validation_rule)
+    
+    def _parse_validation_expression(self, expr: str) -> List[tuple]:
+        """Parse validation expression like 'pattern("^[a-zA-Z0-9_-]+$")' or 'minLength(1), maxLength(100)'."""
+        rules = []
+        expr = expr.strip()
+        
+        if ',' in expr:
+            parts = [p.strip() for p in expr.split(',')]
+            for part in parts:
+                rules.extend(self._parse_validation_expression(part))
+        else:
+            match = re.match(r'(\w+)\(([^)]+)\)', expr)
+            if match:
+                rule_name = match.group(1)
+                rule_value = match.group(2).strip()
+                rules.append((rule_name, rule_value))
+        
+        return rules
+    
     def _expand_type_schema(self, type_ref: Dict[str, Any], defs: Dict[str, Any]) -> Dict[str, Any]:
         if '_type_ref' not in type_ref:
             return type_ref
@@ -447,12 +525,62 @@ class ADLDSLCompilerV2:
         
         return result
     
+    def _apply_validation_rules(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply validation rules to the schema."""
+        if not self.validation_rules:
+            return schema
+        
+        for rule in self.validation_rules:
+            if rule.type == "field" and rule.field:
+                # Apply rule to specific field
+                if rule.field in schema.get('properties', {}):
+                    prop_schema = schema['properties'][rule.field]
+                    # Convert rule to JSON Schema keywords
+                    if rule.rule.startswith('minLength('):
+                        length = int(rule.rule[10:-1])
+                        prop_schema['minLength'] = length
+                    elif rule.rule.startswith('maxLength('):
+                        length = int(rule.rule[10:-1])
+                        prop_schema['maxLength'] = length
+                    elif rule.rule.startswith('pattern('):
+                        pattern = rule.rule[9:-2]  # Extract pattern without quotes
+                        prop_schema['pattern'] = pattern
+                    elif rule.rule.startswith('minimum('):
+                        min_val = int(rule.rule[8:-1])
+                        prop_schema['minimum'] = min_val
+                    elif rule.rule.startswith('maximum('):
+                        max_val = int(rule.rule[8:-1])
+                        prop_schema['maximum'] = max_val
+                    elif rule.rule.startswith('minItems('):
+                        min_items = int(rule.rule[9:-1])
+                        prop_schema['minItems'] = min_items
+                    elif rule.rule.startswith('maxItems('):
+                        max_items = int(rule.rule[9:-1])
+                        prop_schema['maxItems'] = max_items
+                    elif rule.rule.startswith('enum('):
+                        enum_values = rule.rule[5:-1].split(',')
+                        prop_schema['enum'] = [v.strip() for v in enum_values]
+            elif rule.type == "cross-field":
+                # Add cross-field validation as a custom property
+                if 'custom_validations' not in schema:
+                    schema['custom_validations'] = []
+                schema['custom_validations'].append({
+                    'name': rule.name,
+                    'rule': rule.rule,
+                    'message': rule.message
+                })
+        
+        return schema
+    
     def compile_to_json_schema(self, agent_def: Dict[str, Any]) -> Dict[str, Any]:
         defs = {}
         
         expanded_properties = {}
         for prop_name, prop_schema in agent_def['properties'].items():
             expanded_properties[prop_name] = self._expand_schema_recursive(prop_schema, defs)
+        
+        # Apply validation rules to properties
+        expanded_properties = self._apply_validation_rules({'properties': expanded_properties})['properties']
         
         schema = {
             "$schema": "https://json-schema.org/draft/2020-12/schema",

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/agent-definition.json",
+  "title": "Agent Definition",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "person": {
+      "$ref": "#/$defs/Person"
+    }
+  },
+  "required": [
+    "id",
+    "person"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Person": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        }
+      },
+      "required": [
+        "name",
+        "age",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "Status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ]
+    }
+  }
+}

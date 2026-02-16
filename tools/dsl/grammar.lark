@@ -1,0 +1,167 @@
+// ADL DSL Grammar v1.0
+// Parser: Lark LALR(1)
+
+// ============================================
+// TERMINALS
+// ============================================
+
+// Keywords
+IMPORT: "import"
+ENUM: "enum"
+TYPE: "type"
+AGENT: "agent"
+AS: "as"
+MODULE: "module"
+EXPORT: "export"
+VALIDATION: "validation"
+
+// Boolean literals
+TRUE: "true"
+FALSE: "false"
+
+// Primitive types (must come before IDENTIFIER to match first)
+PRIMITIVE_STRING: "string"
+PRIMITIVE_INTEGER: "integer"
+PRIMITIVE_NUMBER: "number"
+PRIMITIVE_BOOLEAN: "boolean"
+PRIMITIVE_OBJECT: "object"
+PRIMITIVE_ARRAY: "array"
+PRIMITIVE_ANY: "any"
+PRIMITIVE_NULL: "null"
+
+// Identifiers
+IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_-]*/
+
+// String literals (imported from common module)
+
+// Numeric literals
+INTEGER: /-?[0-9]+/
+DECIMAL: /-?[0-9]+\.[0-9]+/
+SCIENTIFIC: /-?[0-9]+(\.[0-9]+)?[eE][+-]?[0-9]+/
+NUMBER: INTEGER | DECIMAL | SCIENTIFIC
+
+// Comments
+COMMENT: /#[^\n]*/
+
+// Whitespace
+WS: /[ \t\n\r]+/
+
+// Structural symbols
+SLASH: "/"
+DOTDOT: /\.\./
+DOT: "."
+COMMA: ","
+QMARK: "?"
+COLON: ":"
+LBRACE: "{"
+RBRACE: "}"
+LBRACKET: "["
+RBRACKET: "]"
+LPAREN: "("
+RPAREN: ")"
+PIPE: "|"
+
+// ============================================
+// RULES - Program Structure
+// ============================================
+// RULES - Program Structure
+// ============================================
+// RULES - Program Structure
+// ============================================
+
+// Entry point
+start: program
+
+program: import_stmt* declaration* agent_def?
+
+declaration: enum_def | type_def
+
+// ============================================
+// RULES - Imports
+// ============================================
+
+import_stmt: IMPORT import_path (AS IDENTIFIER)?
+
+import_path: absolute_path | relative_path
+
+absolute_path: IDENTIFIER (SLASH IDENTIFIER)* | IDENTIFIER (DOT IDENTIFIER)*
+
+relative_path: DOT IDENTIFIER (SLASH IDENTIFIER)* | DOT IDENTIFIER (DOT IDENTIFIER)*
+              | DOTDOT IDENTIFIER (SLASH IDENTIFIER)* | DOTDOT IDENTIFIER (DOT IDENTIFIER)*
+
+// ============================================
+// RULES - Enums
+// ============================================
+
+enum_def: ENUM IDENTIFIER LBRACE enum_body RBRACE
+
+enum_body: enum_value (COMMA? enum_value)*
+
+enum_value: IDENTIFIER
+
+// ============================================
+// RULES - Types
+// ============================================
+
+type_def: TYPE IDENTIFIER type_body
+
+type_body: LBRACE field_list RBRACE
+
+field_list: field_def*
+
+field_def: IDENTIFIER QMARK? COLON type_expr
+
+// ============================================
+// RULES - Type Expressions
+// ============================================
+
+type_expr: union_type
+
+union_type: postfix_type (PIPE postfix_type)*
+
+postfix_type: primary_type suffix*
+
+suffix: array_suffix | optional_suffix | constraint_suffix
+
+array_suffix: LBRACKET RBRACKET
+
+optional_suffix: QMARK
+
+constraint_suffix: LPAREN range_constraint RPAREN
+
+range_constraint: NUMBER DOTDOT NUMBER?
+                | DOTDOT NUMBER
+                | NUMBER DOTDOT
+                | DOTDOT
+
+primary_type: PRIMITIVE_STRING
+              | PRIMITIVE_INTEGER
+              | PRIMITIVE_NUMBER
+              | PRIMITIVE_BOOLEAN
+              | PRIMITIVE_OBJECT
+              | PRIMITIVE_ARRAY
+              | PRIMITIVE_ANY
+              | PRIMITIVE_NULL
+              | IDENTIFIER
+              | LPAREN type_expr RPAREN
+
+// ============================================
+// RULES - Agent
+// ============================================
+
+agent_def: AGENT IDENTIFIER LBRACE field_list RBRACE
+
+// ============================================
+// DIRECTIVES
+// ============================================
+
+%ignore WS
+%ignore COMMENT
+
+// ============================================
+// PRIORITIES (for conflict resolution)
+// ============================================
+
+%import common.ESCAPED_STRING -> STRING
+
+%ignore WS
