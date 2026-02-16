@@ -8,6 +8,9 @@ from typing import List, Dict, Set, Optional, Callable, Any, Union
 from dataclasses import dataclass
 from pathlib import Path
 import re
+import importlib.util
+import json
+import yaml
 from .parser import GrammarParser
 from .ast import Program, TypeDef, EnumDef, AgentDef, FieldDef
 
@@ -27,7 +30,7 @@ class LintRule:
 @dataclass
 class LintIssue:
     """Represents a linting issue."""
-    
+
     rule_name: str
     line_number: int
     severity: str
@@ -35,22 +38,33 @@ class LintIssue:
     fixable: bool = False
 
 
+@dataclass
+class Suppression:
+    """Represents a rule suppression directive."""
+
+    rule_name: str
+    line_number: int
+    scope: str  # 'next-line', 'line', 'file'
+    source_line: str
+
+
 class ADLLinter:
     """
     Linter for ADL DSL files.
-    
+
     Provides comprehensive linting with configurable rules and autofix capabilities.
     """
-    
+
     def __init__(self):
         self.rules: Dict[str, LintRule] = {}
         self.enabled_rules: Set[str] = set()
         self.severity_filter: str = 'warning'
+        self.suppressions: List[Suppression] = []
         self._register_default_rules()
     
     def _register_default_rules(self):
         """Register default linting rules."""
-        
+
         # Naming convention rules
         self.register_rule(LintRule(
             name='type-name-pascal-case',
@@ -59,7 +73,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_type_name_pascal_case(line),
             message=lambda line: f"Type name should use PascalCase: {self._extract_type_name(line)}"
         ))
-        
+
         self.register_rule(LintRule(
             name='field-name-snake-case',
             description='Field names should use snake_case',
@@ -67,7 +81,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_field_name_snake_case(line),
             message=lambda line: f"Field name should use snake_case: {self._extract_field_name(line)}"
         ))
-        
+
         self.register_rule(LintRule(
             name='enum-value-lowercase',
             description='Enum values should use lowercase',
@@ -75,7 +89,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_enum_value_lowercase(line),
             message=lambda line: f"Enum value should use lowercase: {self._extract_enum_value(line)}"
         ))
-        
+
         # Documentation rules
         self.register_rule(LintRule(
             name='missing-type-description',
@@ -84,7 +98,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_type_description(line, line_num),
             message="Type definition should have a description comment"
         ))
-        
+
         self.register_rule(LintRule(
             name='missing-field-description',
             description='Fields should have descriptions',
@@ -92,7 +106,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_field_description(line, line_num),
             message="Field should have a description comment"
         ))
-        
+
         # Import rules
         self.register_rule(LintRule(
             name='import-order',
@@ -101,7 +115,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_import_order(line, line_num),
             message="Imports should be ordered alphabetically"
         ))
-        
+
         self.register_rule(LintRule(
             name='unused-import',
             description='Imports should be used',
@@ -109,7 +123,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_unused_import(line, line_num),
             message="Import is not used in the file"
         ))
-        
+
         # Style rules
         self.register_rule(LintRule(
             name='trailing-whitespace',
@@ -119,7 +133,7 @@ class ADLLinter:
             fix=lambda line: line.rstrip(),
             message="Line has trailing whitespace"
         ))
-        
+
         self.register_rule(LintRule(
             name='no-tabs',
             description='Use spaces instead of tabs',
@@ -128,7 +142,7 @@ class ADLLinter:
             fix=lambda line: line.replace('\t', '  '),
             message="Use spaces instead of tabs"
         ))
-        
+
         self.register_rule(LintRule(
             name='max-line-length',
             description='Lines should not exceed max length',
@@ -136,7 +150,7 @@ class ADLLinter:
             check=lambda line, line_num: len(line) > 100,
             message=lambda line: f"Line too long ({len(line)} > 100)"
         ))
-        
+
         self.register_rule(LintRule(
             name='empty-line-with-whitespace',
             description='Empty lines should not contain whitespace',
@@ -145,7 +159,7 @@ class ADLLinter:
             fix=lambda line: '',
             message="Empty line contains whitespace"
         ))
-        
+
         # Structure rules
         self.register_rule(LintRule(
             name='duplicate-field',
@@ -154,7 +168,7 @@ class ADLLinter:
             check=lambda line, line_num: self._check_duplicate_field(line, line_num),
             message="Duplicate field name detected"
         ))
-        
+
         self.register_rule(LintRule(
             name='missing-required-fields',
             description='Type/agent should have at least one field',
@@ -196,6 +210,9 @@ class ADLLinter:
     
     def lint_content(self, content: str) -> List[LintIssue]:
         """Lint DSL content and return issues."""
+        # Parse suppression comments first
+        self.suppressions = self._parse_suppression_comments(content)
+
         parser = GrammarParser()
         try:
             program = parser.parse(content)
@@ -205,13 +222,44 @@ class ADLLinter:
     
     def _lint_content_simple(self, content: str) -> List[LintIssue]:
         """Lint content without AST (fallback for syntax errors)."""
+        # Parse suppression comments first
+        self.suppressions = self._parse_suppression_comments(content)
+
         lines = content.split('\n')
         issues = []
         severity_order = {'error': 0, 'warning': 1, 'info': 2}
         min_severity = severity_order[self.severity_filter]
-        
+
+        # Track suppression state
+        suppressed_rules = set()
+        next_line_suppression = None
+
+        # Add file suppressions (apply to all lines)
+        for suppression in self.suppressions:
+            if suppression.scope == 'file':
+                suppressed_rules.add(suppression.rule_name)
+
         for line_num, line in enumerate(lines, 1):
+            # Check for next-line suppression from previous line
+            for suppression in self.suppressions:
+                if suppression.line_number == line_num - 1 and suppression.scope == 'next-line':
+                    next_line_suppression = suppression.rule_name
+
+            # Check for line suppression
+            for suppression in self.suppressions:
+                if suppression.line_number == line_num and suppression.scope == 'line':
+                    suppressed_rules.add(suppression.rule_name)
+
+            # Apply next-line suppression
+            if next_line_suppression:
+                suppressed_rules.add(next_line_suppression)
+                next_line_suppression = None
+
             for rule_name in self.enabled_rules:
+                # Skip if rule is suppressed
+                if rule_name in suppressed_rules:
+                    continue
+
                 rule = self.rules[rule_name]
 
                 if severity_order[rule.severity] < min_severity:
@@ -228,24 +276,51 @@ class ADLLinter:
                         message=message,
                         fixable=fixable
                     ))
-        
+
         return issues
     
     def lint_content_with_ast(self, content: str, program: Program) -> List[LintIssue]:
         """Lint DSL content with AST context for better analysis."""
+        # Parse suppression comments first
+        self.suppressions = self._parse_suppression_comments(content)
+
         lines = content.split('\n')
         issues = []
         severity_order = {'error': 0, 'warning': 1, 'info': 2}
         min_severity = severity_order[self.severity_filter]
-        
+
         # Track context for AST-based rules
         imports = []
         import_lines = {}
         type_fields = {}
         current_type = None
         field_names = set()
-        
+
+        # Track suppression state
+        suppressed_rules = set()
+        next_line_suppression = None
+
+        # Add file suppressions (apply to all lines)
+        for suppression in self.suppressions:
+            if suppression.scope == 'file':
+                suppressed_rules.add(suppression.rule_name)
+
         for line_num, line in enumerate(lines, 1):
+            # Check for next-line suppression from previous line
+            for suppression in self.suppressions:
+                if suppression.line_number == line_num - 1 and suppression.scope == 'next-line':
+                    next_line_suppression = suppression.rule_name
+
+            # Check for line suppression
+            for suppression in self.suppressions:
+                if suppression.line_number == line_num and suppression.scope == 'line':
+                    suppressed_rules.add(suppression.rule_name)
+
+            # Apply next-line suppression
+            if next_line_suppression:
+                suppressed_rules.add(next_line_suppression)
+                next_line_suppression = None
+
             # Track imports
             if line.strip().startswith('import '):
                 import_name = line.strip().replace('import ', '').strip()
@@ -274,8 +349,12 @@ class ADLLinter:
                     field_names.add(field_name)
                     type_fields[current_type].append(field_name)
 
-            # Check all rules
+            # Check all rules (skip suppressed rules)
             for rule_name in self.enabled_rules:
+                # Skip if rule is suppressed
+                if rule_name in suppressed_rules:
+                    continue
+
                 rule = self.rules[rule_name]
 
                 if severity_order[rule.severity] < min_severity:
@@ -292,14 +371,14 @@ class ADLLinter:
                         message=message,
                         fixable=fixable
                     ))
-        
+
         # Check for unused imports
         used_imports = set()
         for line in lines:
             for imp in imports:
                 if imp in line:
                     used_imports.add(imp)
-        
+
         for imp, line_num in import_lines.items():
             if imp not in used_imports:
                 issues.append(LintIssue(
@@ -309,8 +388,8 @@ class ADLLinter:
                     message=f"Import '{imp}' is not used",
                     fixable=False
                 ))
-        
-        # Check import order
+
+# Check import order
         if imports != sorted(imports):
             issues.append(LintIssue(
                 rule_name='import-order',
@@ -319,7 +398,7 @@ class ADLLinter:
                 message="Imports should be ordered alphabetically",
                 fixable=False
             ))
-        
+
         return issues
     
     def fix_file(self, file_path: Path, issues: List[LintIssue]) -> int:
@@ -417,3 +496,200 @@ class ADLLinter:
         """Extract enum value from line."""
         match = re.search(r'^\s*(\w+)\s*$', line)
         return match.group(1) if match else ''
+
+    def _parse_suppression_comments(self, content: str) -> List[Suppression]:
+        """Parse suppression comments from content.
+
+        Supports three suppression types:
+        - # adl-disable-next-line rule-name (suppresses next line only)
+        - # adl-disable-line rule-name (suppresses current line only)
+        - # adl-disable rule-name (suppresses entire file)
+
+        Returns:
+            List of Suppression objects
+        """
+        suppressions = []
+        lines = content.split('\n')
+
+        for line_num, line in enumerate(lines, 1):
+            # Check for suppression comments
+            if '# adl-disable' in line:
+                # Extract rule name(s)
+                match = re.search(r'#\s*adl-disable(?:-(next-line|line))?\s+([\w-]+)', line)
+                if match:
+                    scope = match.group(1) or 'file'
+                    rule_name = match.group(2)
+
+                    # Validate scope
+                    if scope not in ('next-line', 'line', 'file'):
+                        continue
+
+                    suppressions.append(Suppression(
+                        rule_name=rule_name,
+                        line_number=line_num,
+                        scope=scope,
+                        source_line=line.strip()
+                    ))
+
+        return suppressions
+
+    def load_rules_from_file(self, file_path: Union[str, Path]) -> List[LintRule]:
+        """Load custom rules from a Python file.
+
+        Args:
+            file_path: Path to Python file containing rule definitions
+
+        Returns:
+            List of loaded LintRule objects
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ImportError: If file can't be imported
+        """
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"Rule file not found: {file_path}")
+
+        # Load module from file
+        spec = importlib.util.spec_from_file_location("custom_rules", file_path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load module from: {file_path}")
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Find and load rules from module
+        rules = []
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if isinstance(attr, LintRule):
+                rules.append(attr)
+
+        return rules
+
+    def load_rules_from_dict(self, rules_config: Union[Dict, List[Dict]]) -> List[LintRule]:
+        """Load custom rules from a dictionary or list of dictionaries.
+
+        Args:
+            rules_config: Dictionary or list of rule configurations
+
+        Returns:
+            List of loaded LintRule objects
+
+        Example:
+            rules_config = [
+                {
+                    'name': 'no-todos',
+                    'description': 'No TODO comments allowed',
+                    'severity': 'warning',
+                    'check': lambda line, line_num: 'TODO' in line,
+                    'message': 'Remove TODO comment'
+                }
+            ]
+        """
+        rules = []
+
+        if isinstance(rules_config, dict):
+            rules_config = [rules_config]
+
+        for rule_config in rules_config:
+            # Validate required fields
+            if 'name' not in rule_config or 'check' not in rule_config:
+                raise ValueError(f"Rule config missing required fields: {rule_config}")
+
+            # Create LintRule from config
+            rule = LintRule(
+                name=rule_config['name'],
+                description=rule_config.get('description', ''),
+                severity=rule_config.get('severity', 'warning'),
+                check=rule_config['check'],
+                fix=rule_config.get('fix'),
+                message=rule_config.get('message', rule_config['name'])
+            )
+
+            rules.append(rule)
+
+        return rules
+
+    def load_rules_from_module(self, module_name: str) -> List[LintRule]:
+        """Load custom rules from a Python module.
+
+        Args:
+            module_name: Name of Python module (e.g., 'my_rules')
+
+        Returns:
+            List of loaded LintRule objects
+
+        Raises:
+            ImportError: If module can't be imported
+        """
+        try:
+            module = importlib.import_module(module_name)
+        except ImportError as e:
+            raise ImportError(f"Cannot import module: {module_name}") from e
+
+        # Find and load rules from module
+        rules = []
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if isinstance(attr, LintRule):
+                rules.append(attr)
+
+        return rules
+
+    def load_rules_from_json(self, file_path: Union[str, Path]) -> List[LintRule]:
+        """Load custom rules from a JSON file.
+
+        Args:
+            file_path: Path to JSON file containing rule configurations
+
+        Returns:
+            List of loaded LintRule objects
+
+        Example JSON format:
+            [
+                {
+                    "name": "no-todos",
+                    "description": "No TODO comments allowed",
+                    "severity": "warning",
+                    "check": "lambda line, line_num: 'TODO' in line",
+                    "message": "Remove TODO comment"
+                }
+            ]
+        """
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"Rule file not found: {file_path}")
+
+        with open(file_path, 'r') as f:
+            rules_config = json.load(f)
+
+        return self.load_rules_from_dict(rules_config)
+
+    def load_rules_from_yaml(self, file_path: Union[str, Path]) -> List[LintRule]:
+        """Load custom rules from a YAML file.
+
+        Args:
+            file_path: Path to YAML file containing rule configurations
+
+        Returns:
+            List of loaded LintRule objects
+
+        Example YAML format:
+            - name: no-todos
+              description: No TODO comments allowed
+              severity: warning
+              check: "lambda line, line_num: 'TODO' in line"
+              message: Remove TODO comment
+        """
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"Rule file not found: {file_path}")
+
+        with open(file_path, 'r') as f:
+            rules_config = yaml.safe_load(f)
+
+        return self.load_rules_from_dict(rules_config)
