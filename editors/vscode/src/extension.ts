@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ADLDiagnosticsProvider } from './diagnostics';
 import { ADLCompletionProvider } from './completion';
+import { ADLDefinitionProvider } from './definition';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('ADL DSL extension is now active!');
@@ -42,6 +43,37 @@ export function activate(context: vscode.ExtensionContext) {
             '\n'
         )
     );
+
+    const definitionProvider = new ADLDefinitionProvider();
+    context.subscriptions.push(
+        vscode.languages.registerDefinitionProvider(
+            'adl',
+            definitionProvider
+        )
+    );
+
+    const updateDefinitions = (document: vscode.TextDocument) => {
+        if (document.languageId === 'adl') {
+            definitionProvider.updateDefinitions(document, vscode.workspace.rootPath || '');
+        }
+    };
+
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument(updateDiagnostics)
+    );
+
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeTextDocument(event => {
+            updateDiagnostics(event.document);
+            updateDefinitions(event.document);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.workspace.onDidSaveTextDocument(updateDiagnostics)
+    );
+
+    vscode.workspace.textDocuments.forEach(updateDiagnostics);
 }
 
 export function deactivate() {

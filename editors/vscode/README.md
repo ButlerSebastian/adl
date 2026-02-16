@@ -114,6 +114,35 @@ type Person {
 }
 ```
 
+## Go to Definition
+
+The extension provides navigation to type and enum definitions:
+
+### Usage
+- Press `F12` on a type or enum reference to navigate to its definition
+- Works with types defined in the current file
+- Handles cross-file references from import statements
+
+### Supported References
+- Type definitions: `type Person { ... }`
+- Enum definitions: `enum Status { active, inactive }`
+- Import statements: `import { Person } from './types'`
+
+### Example
+
+```adl
+# Import type from another file
+import { User } from './user'
+
+# Use the imported type
+type Profile {
+  user: User
+  metadata: Metadata
+}
+
+# Navigate to User definition with F12
+```
+
 ## Example
 
 ```adl
