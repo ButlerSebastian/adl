@@ -11,7 +11,7 @@ This module provides semantic validation for ADL DSL ASTs, checking for:
 
 from typing import List, Dict, Set, Optional
 from dataclasses import dataclass
-from .ast import (
+from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
     PrimitiveType, OptionalType, ASTVisitor, SourceLocation

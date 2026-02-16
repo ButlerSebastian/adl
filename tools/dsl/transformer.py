@@ -10,7 +10,7 @@ from lark.tree import Meta
 from typing import List, Optional, Union, Any
 
 # Import all AST node types from ast module
-from .ast import (
+from .adl_ast import (
     SourceLocation,
     Program,
     ImportStmt,

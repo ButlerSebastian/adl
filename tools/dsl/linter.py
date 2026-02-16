@@ -12,7 +12,7 @@ import importlib.util
 import json
 import yaml
 from .parser import GrammarParser
-from .ast import Program, TypeDef, EnumDef, AgentDef, FieldDef
+from .adl_ast import Program, TypeDef, EnumDef, AgentDef, FieldDef
 
 
 @dataclass

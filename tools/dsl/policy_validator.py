@@ -41,20 +41,20 @@ class PolicyValidator:
             severity="warning"
         ))
 
-    def validate(self, policy: Dict[str, Any]) -> List[ValidationError]:
-        """Validate policy configuration."""
+    def validate(self, policy: Dict[str, Any]) -> tuple[List[ValidationError], List[ValidationError]]:
+        """Validate policy configuration. Returns (errors, warnings)."""
         self.errors = []
         self.warnings = []
 
         if not policy:
-            return []
+            return [], []
 
         self._validate_structure(policy)
         self._validate_rego(policy)
         self._validate_enforcement(policy)
         self._validate_data(policy)
 
-        return self.errors
+        return self.errors, self.warnings
 
     def _validate_structure(self, policy: Dict[str, Any]) -> None:
         """Validate policy structure."""

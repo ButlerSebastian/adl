@@ -5,7 +5,7 @@ This module generates JSON Schema from ADL DSL ASTs.
 """
 
 from typing import Dict, Any, List
-from .ast import (
+from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
     PrimitiveType, OptionalType, ASTVisitor

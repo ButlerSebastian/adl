@@ -5,7 +5,7 @@ This module generates Python type definitions from ADL DSL ASTs.
 """
 
 from typing import List, Dict, Any
-from .ast import (
+from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
     PrimitiveType, OptionalType, ASTVisitor,

@@ -8,7 +8,7 @@ pretty printing, comment preservation, import sorting, and configurable options.
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Tuple
 from pathlib import Path
-from .ast import (
+from .adl_ast import (
     Program, ImportStmt, EnumDef, TypeDef, TypeBody, FieldDef,
     AgentDef, PrimitiveType, TypeReference, ArrayType, UnionType,
     OptionalType, ConstrainedType, ASTVisitor

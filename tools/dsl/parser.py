@@ -11,7 +11,7 @@ from typing import Optional, Union, List, Dict, Any
 from lark import Lark, UnexpectedInput
 from lark.exceptions import UnexpectedCharacters, UnexpectedToken, ParseError as LarkParseError
 
-from .ast import Program
+from .adl_ast import Program
 from .transformer import ADLTransformer
 from .validator import SemanticValidator, ValidationError
 from .json_schema_generator import JSONSchemaGenerator

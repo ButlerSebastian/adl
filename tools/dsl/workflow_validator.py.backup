@@ -48,12 +48,12 @@ class WorkflowValidator:
             severity="warning"
         ))
 
-    def validate(self, workflow: Dict[str, Any]) -> tuple[List[ValidationError], List[ValidationError]]:
-        """Validate workflow configuration. Returns (errors, warnings)."""
+    def validate(self, workflow: Dict[str, Any]) -> List[ValidationError]:
+        """Validate workflow configuration."""
         self.errors = []
 
         if not workflow:
-            return [], []
+            return []
 
         self._validate_structure(workflow)
         self._validate_nodes(workflow)
@@ -61,10 +61,11 @@ class WorkflowValidator:
         self._validate_cycles(workflow)
         self._validate_connections(workflow)
 
-        return self.errors, self.warnings
+        return self.errors
 
     def _validate_structure(self, workflow: Dict[str, Any]) -> None:
         """Validate workflow structure."""
+        # Support both old 'id' and new 'workflow_id' field names
         workflow_id = workflow.get("workflow_id") or workflow.get("id")
         if not workflow_id:
             self.errors.append(ValidationError(
@@ -72,9 +73,19 @@ class WorkflowValidator:
                 message="Workflow must have a 'workflow_id' field (or 'id' for backward compatibility)"
             ))
         else:
+            # Check for deprecation warning
             if "id" in workflow and "workflow_id" not in workflow:
                 self._add_deprecation_warning("workflow", "id", "workflow_id")
 
+            # Validate hierarchical ID format
+            if not self._is_hierarchical_id(workflow_id):
+                self.warnings.append(ValidationError(
+                    field="workflow_id",
+                    message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
+                    severity="warning"
+                ))
+
+            # Validate hierarchical ID format
             if not self._is_hierarchical_id(workflow_id):
                 self.warnings.append(ValidationError(
                     field="workflow_id",
@@ -90,6 +101,7 @@ class WorkflowValidator:
                         message=f"Workflow must have a '{field}' field"
                     ))
 
+            # Validate version format
             if "version" in workflow:
                 version = workflow["version"]
                 if not isinstance(version, str):
@@ -102,6 +114,48 @@ class WorkflowValidator:
                         field="version",
                         message=f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'"
                     ))
+    else:
+        # Check for deprecation warning
+        if "id" in workflow and "workflow_id" not in workflow:
+            self._add_deprecation_warning("workflow", "id", "workflow_id")
+
+        # Validate hierarchical ID format
+        if not self._is_hierarchical_id(workflow_id):
+            self.warnings.append(ValidationError(
+                field="workflow_id",
+                message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
+                severity="warning"
+            ))
+
+        # Validate hierarchical ID format
+        if not self._is_hierarchical_id(workflow_id):
+            self.warnings.append(ValidationError(
+                field="workflow_id",
+                message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
+                severity="warning"
+            ))
+
+        required_fields = ["name", "version", "nodes", "edges"]
+        for field in required_fields:
+            if field not in workflow:
+                self.errors.append(ValidationError(
+                    field=field,
+                    message=f"Workflow must have a '{field}' field"
+                ))
+
+        # Validate version format
+        if "version" in workflow:
+            version = workflow["version"]
+            if not isinstance(version, str):
+                self.errors.append(ValidationError(
+                    field="version",
+                    message="Version must be a string"
+                ))
+            elif not self._is_semantic_version(version):
+                self.errors.append(ValidationError(
+                    field="version",
+                    message=f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'"
+                ))
 
     def _validate_nodes(self, workflow: Dict[str, Any]) -> None:
         """Validate nodes field."""
@@ -137,6 +191,7 @@ class WorkflowValidator:
                 ))
                 continue
 
+            # Check for duplicate IDs
             if node_id in node_ids:
                 self.errors.append(ValidationError(
                     field=f"nodes.{node_id}",
@@ -144,6 +199,7 @@ class WorkflowValidator:
                 ))
             node_ids.add(node_id)
 
+            # Validate node structure
             if "type" not in node:
                 self.errors.append(ValidationError(
                     field=f"nodes.{node_id}",
@@ -163,6 +219,7 @@ class WorkflowValidator:
                     message=f"Node '{node_id}' must have a 'label' field"
                 ))
 
+            # Validate position if present
             if "position" in node:
                 position = node["position"]
                 if not isinstance(position, dict):
@@ -187,23 +244,12 @@ class WorkflowValidator:
         edges = workflow.get("edges")
 
         if not edges:
-            self.errors.append(ValidationError(
-                field="edges",
-                message="Workflow must have an 'edges' field"
-            ))
             return
 
         if not isinstance(edges, list):
             self.errors.append(ValidationError(
                 field="edges",
                 message="Edges must be an array"
-            ))
-            return
-
-        if len(edges) == 0:
-            self.errors.append(ValidationError(
-                field="edges",
-                message="Workflow must have at least one edge"
             ))
             return
 
@@ -216,6 +262,7 @@ class WorkflowValidator:
                 ))
                 continue
 
+# Support both old 'id' and new 'edge_id' field names
             edge_id = edge.get("edge_id") or edge.get("id")
             if edge_id:
                 if edge_id in edge_ids:
@@ -225,15 +272,32 @@ class WorkflowValidator:
                     ))
                 edge_ids.add(edge_id)
 
+                # Check for deprecation warning
                 if "id" in edge and "edge_id" not in edge:
                     self._add_deprecation_warning(f"edges[{i}]", "id", "edge_id")
 
+                # Validate hierarchical ID format
                 if not self._is_hierarchical_id(edge_id):
                     self.warnings.append(ValidationError(
                         field=f"edges[{i}].edge_id",
                         message=f"Edge ID '{edge_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
                         severity="warning"
                     ))
+
+            # Validate edge structure
+            if "source" not in edge:
+                self.errors.append(ValidationError(
+                    field=f"edges[{i}]",
+                    message="Edge must have a 'source' field"
+                ))
+                edge_ids.add(edge_id)
+
+            # Validate edge structure
+            if "id" not in edge:
+                self.errors.append(ValidationError(
+                    field=f"edges[{i}]",
+                    message="Edge must have an 'id' field"
+                ))
 
             if "source" not in edge:
                 self.errors.append(ValidationError(
@@ -247,6 +311,7 @@ class WorkflowValidator:
                     message="Edge must have a 'target' field"
                 ))
 
+            # Validate relation if present
             if "relation" in edge:
                 relation = edge["relation"]
                 if relation not in self.VALID_EDGE_RELATIONS:
@@ -263,6 +328,7 @@ class WorkflowValidator:
         if not nodes or not edges:
             return
 
+        # Build adjacency list and in-degree count
         adjacency = defaultdict(list)
         in_degree = {node_id: 0 for node_id in nodes}
 
@@ -274,6 +340,7 @@ class WorkflowValidator:
                 adjacency[source].append(target)
                 in_degree[target] += 1
 
+        # Find all nodes with no incoming edges
         queue = deque([node_id for node_id, degree in in_degree.items() if degree == 0])
         result = []
 
@@ -286,7 +353,9 @@ class WorkflowValidator:
                 if in_degree[neighbor] == 0:
                     queue.append(neighbor)
 
+        # If we didn't process all nodes, there's a cycle
         if len(result) != len(nodes):
+            # Find nodes in the cycle
             cycle_nodes = set(nodes.keys()) - set(result)
             self.errors.append(ValidationError(
                 field="workflow",
@@ -307,6 +376,7 @@ class WorkflowValidator:
             source = edge.get("source")
             target = edge.get("target")
 
+            # Check if source and target exist
             if source and source not in node_ids:
                 self.errors.append(ValidationError(
                     field=f"edges[{i}].source",
@@ -319,6 +389,7 @@ class WorkflowValidator:
                     message=f"Edge target '{target}' does not exist in nodes"
                 ))
 
+            # Validate trigger nodes (no incoming edges)
             if source and target:
                 source_node = nodes.get(source, {})
                 target_node = nodes.get(target, {})
@@ -326,18 +397,21 @@ class WorkflowValidator:
                 source_type = source_node.get("type")
                 target_type = target_node.get("type")
 
+                # Trigger nodes should not have incoming edges
                 if target_type == "trigger":
                     self.errors.append(ValidationError(
                         field=f"edges[{i}]",
                         message=f"Trigger node '{target}' cannot have incoming edges"
                     ))
 
+                # Output nodes should not have outgoing edges
                 if source_type == "output":
                     self.errors.append(ValidationError(
                         field=f"edges[{i}]",
                         message=f"Output node '{source}' cannot have outgoing edges"
                     ))
 
+                # Condition nodes should have at least 2 outgoing edges
                 if source_type == "condition":
                     outgoing_edges = [
                         e for e in edges
