@@ -164,6 +164,16 @@ def create_parser() -> argparse.ArgumentParser:
         default='typescript',
         help='Output format (default: typescript)'
     )
+    generate_parser.add_argument(
+        '--watch',
+        action='store_true',
+        help='Watch mode: regenerate on file changes'
+    )
+    generate_parser.add_argument(
+        '--docs',
+        action='store_true',
+        help='Include documentation in generated code'
+    )
     
     return parser
 
@@ -408,34 +418,64 @@ def cmd_lint(args) -> int:
 
 
 def cmd_generate(args) -> int:
-    """Generate type definitions from DSL."""
+    """Generate type definitions from DSL with watch mode."""
     try:
         import json
+        import time
 
         parser = GrammarParser()
 
-        with open(args.input, 'r') as f:
-            dsl_content = f.read()
+        def generate_file():
+            """Generate type definitions and write output."""
+            with open(args.input, 'r') as f:
+                dsl_content = f.read()
 
-        program = parser.parse(dsl_content)
+            program = parser.parse(dsl_content)
 
-        if args.format == 'typescript':
-            output = parser.generate_typescript(program)
-        elif args.format == 'python':
-            output = parser.generate_python(program)
-        elif args.format == 'json-schema':
-            schema = parser.generate_json_schema(program)
-            output = json.dumps(schema, indent=2)
+            if args.format == 'typescript':
+                output = parser.generate_typescript(program)
+            elif args.format == 'python':
+                output = parser.generate_python(program)
+            elif args.format == 'json-schema':
+                schema = parser.generate_json_schema(program)
+                output = json.dumps(schema, indent=2)
+            else:
+                print(f"Error: Unknown format {args.format}", file=sys.stderr)
+                return None
+
+            if args.docs:
+                doc_header = f"// Generated from {args.input}\n// DO NOT EDIT MANUALLY\n\n"
+                output = doc_header + output
+
+            if args.output:
+                with open(args.output, 'w') as f:
+                    f.write(output)
+                print(f"✓ Generated {args.format} from {args.input} -> {args.output}")
+            else:
+                print(output)
+
+            return output
+
+        if args.watch:
+            print(f"👀 Watching {args.input} for changes... (Ctrl+C to stop)")
+            last_mtime = args.input.stat().st_mtime
+
+            try:
+                generate_file()
+                while True:
+                    time.sleep(1)
+                    current_mtime = args.input.stat().st_mtime
+                    if current_mtime != last_mtime:
+                        print(f"\n📝 Detected changes in {args.input}")
+                        try:
+                            generate_file()
+                            last_mtime = current_mtime
+                        except Exception as e:
+                            print(f"✗ Generation error: {e}", file=sys.stderr)
+            except KeyboardInterrupt:
+                print("\n🛑 Stopping watch mode...")
         else:
-            print(f"Error: Unknown format {args.format}", file=sys.stderr)
-            return 1
-
-        if args.output:
-            with open(args.output, 'w') as f:
-                f.write(output)
-            print(f"✓ Generated {args.format} from {args.input} -> {args.output}")
-        else:
-            print(output)
+            generate_file()
 
         return 0
     except Exception as e:
