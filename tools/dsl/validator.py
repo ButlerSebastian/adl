@@ -9,8 +9,9 @@ This module provides semantic validation for ADL DSL ASTs, checking for:
 - Circular dependencies
 """
 
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set, Optional, Literal
 from dataclasses import dataclass
+from enum import Enum
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
@@ -19,16 +20,67 @@ from .adl_ast import (
 )
 
 
+class ErrorCategory(Enum):
+    """Categories for validation errors."""
+    SYNTAX = "syntax"
+    SEMANTIC = "semantic"
+    VALIDATION = "validation"
+    TYPE = "type"
+
+
 @dataclass
 class ValidationError:
     """Represents a semantic validation error."""
-    
+
     message: str
     location: SourceLocation
     error_code: str
-    
+    category: ErrorCategory = ErrorCategory.SEMANTIC
+
     def __str__(self) -> str:
         return f"{self.error_code}: {self.message} at line {self.location.line}"
+
+
+@dataclass
+class ValidationErrorSummary:
+    """Summary of validation errors grouped by category."""
+
+    total_errors: int
+    syntax_errors: List[ValidationError]
+    semantic_errors: List[ValidationError]
+    validation_errors: List[ValidationError]
+    type_errors: List[ValidationError]
+
+    def get_summary(self) -> str:
+        """Get human-readable summary."""
+        return f"""
+Validation Errors: {self.total_errors}
+- Syntax: {len(self.syntax_errors)}
+- Semantic: {len(self.semantic_errors)}
+- Validation: {len(self.validation_errors)}
+- Type: {len(self.type_errors)}
+"""
+
+    def get_errors_by_category(self) -> Dict[ErrorCategory, List[ValidationError]]:
+        """Get errors grouped by category."""
+        return {
+            ErrorCategory.SYNTAX: self.syntax_errors,
+            ErrorCategory.SEMANTIC: self.semantic_errors,
+            ErrorCategory.VALIDATION: self.validation_errors,
+            ErrorCategory.TYPE: self.type_errors,
+        }
+
+    def has_errors(self) -> bool:
+        """Check if there are any errors."""
+        return self.total_errors > 0
+
+    def get_most_common_errors(self, n: int = 5) -> List[tuple[str, int]]:
+        """Get most common error messages with counts."""
+        error_counts = {}
+        for error in self.semantic_errors + self.validation_errors:
+            error_counts[error.message] = error_counts.get(error.message, 0) + 1
+
+        return sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
 
 class SemanticValidator(ASTVisitor[List[ValidationError]]):
@@ -44,21 +96,21 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
         self.enum_definitions: Dict[str, EnumDef] = {}
         self.visiting: Set[str] = set()
     
-    def validate(self, program: Program) -> List[ValidationError]:
+    def validate(self, program: Program) -> ValidationErrorSummary:
         """
-        Validate a complete ADL program.
-        
+        Validate a complete ADL program and return grouped errors.
+
         Args:
             program: The AST program to validate
-            
+
         Returns:
-            List of validation errors (empty if valid)
+            ValidationErrorSummary with all errors grouped by category
         """
         self.errors = []
         self.type_definitions = {}
         self.enum_definitions = {}
         self.visiting = set()
-        
+
         # First pass: collect all definitions
         for decl in program.declarations:
             if isinstance(decl, TypeDef):
@@ -66,7 +118,8 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                     self.errors.append(ValidationError(
                         message=f"Duplicate type definition: {decl.name}",
                         location=decl.loc,
-                        error_code="DUPLICATE_TYPE"
+                        error_code="DUPLICATE_TYPE",
+                        category=ErrorCategory.SEMANTIC
                     ))
                 else:
                     self.type_definitions[decl.name] = decl
@@ -75,27 +128,28 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                     self.errors.append(ValidationError(
                         message=f"Duplicate enum definition: {decl.name}",
                         location=decl.loc,
-                        error_code="DUPLICATE_ENUM"
+                        error_code="DUPLICATE_ENUM",
+                        category=ErrorCategory.SEMANTIC
                     ))
                 else:
                     self.enum_definitions[decl.name] = decl
-        
+
         # Second pass: validate each definition
         for decl in program.declarations:
             decl.accept(self)
-        
+
         # Validate agent if present
         if program.agent:
             program.agent.accept(self)
-        
-        return self.errors
+
+        return self._create_error_summary()
     
-    def visit_TypeDef(self, node: TypeDef) -> List[ValidationError]:
+    def visit_TypeDef(self, node: TypeDef) -> ValidationErrorSummary:
         """Validate a type definition."""
         field_names: Set[str] = set()
 
         if node.body is None:
-            return self.errors
+            return self._create_error_summary()
 
         for field in node.body.fields:
             # Check for duplicate field names
@@ -103,15 +157,16 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                 self.errors.append(ValidationError(
                     message=f"Duplicate field name: {field.name}",
                     location=field.loc,
-                    error_code="DUPLICATE_FIELD"
+                    error_code="DUPLICATE_FIELD",
+                    category=ErrorCategory.SEMANTIC
                 ))
             else:
                 field_names.add(field.name)
-            
+
             # Validate field type
             self._validate_type(field.type)
-        
-        return self.errors
+
+        return self._create_error_summary()
     
     def visit_EnumDef(self, node: EnumDef) -> List[ValidationError]:
         """Validate an enum definition."""
@@ -225,9 +280,9 @@ class SemanticValidator(ASTVisitor[List[ValidationError]]):
                 error_code="STRING_TOO_LONG"
             ))
     
-    def visit_default(self, node) -> List[ValidationError]:
+    def visit_default(self, node) -> ValidationErrorSummary:
         """Default visitor for unhandled node types."""
-        return self.errors
+        return self._create_error_summary()
 
     def visit_Program(self, node: Program) -> List[ValidationError]:
         """Visit program node."""
