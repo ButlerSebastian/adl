@@ -288,34 +288,23 @@ def cmd_validate(args) -> int:
 def cmd_format(args) -> int:
     """Format DSL file with configurable options."""
     try:
+        from .formatter import DSLFormatter, FormatterConfig
+
         with open(args.input, 'r') as f:
             content = f.read()
 
-        lines = content.split('\n')
-        formatted_lines = []
-        indent_level = 0
+        # Create formatter config from command-line arguments
+        config = FormatterConfig(
+            indent_size=args.indent,
+            max_line_length=args.max_line_length,
+            trailing_commas=args.trailing_commas,
+            sort_imports=True,  # Default to sorting imports
+            preserve_comments=True  # Default to preserving comments
+        )
 
-        for line in lines:
-            stripped = line.strip()
-            if not stripped:
-                formatted_lines.append('')
-                continue
-
-            if stripped.startswith('}'):
-                indent_level = max(0, indent_level - 1)
-
-            indented_line = ' ' * (indent_level * args.indent) + stripped
-
-            if args.trailing_commas and (stripped.endswith(',') or stripped.endswith('{') or stripped.endswith('}')):
-                if not stripped.endswith(',') and not stripped.endswith('{') and not stripped.endswith('}'):
-                    indented_line += ','
-
-            formatted_lines.append(indented_line)
-
-            if stripped.endswith('{'):
-                indent_level += 1
-
-        formatted_content = '\n'.join(formatted_lines)
+        # Format using AST-based formatter
+        formatter = DSLFormatter(config)
+        formatted_content = formatter.format(content)
 
         if args.check:
             if content == formatted_content:
