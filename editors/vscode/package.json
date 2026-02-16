@@ -1,0 +1,54 @@
+{
+  "name": "adl-dsl",
+  "displayName": "ADL DSL Support",
+  "description": "Syntax highlighting and language support for ADL (Agent Definition Language)",
+  "version": "0.1.0",
+  "publisher": "nextmoca",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "adl",
+        "aliases": ["ADL", "adl"],
+        "extensions": [".adl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "adl",
+        "scopeName": "source.adl",
+        "path": "./syntaxes/adl.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "ADL Default Theme",
+        "uiTheme": "vs-dark",
+        "path": "./themes/adl-color-theme.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nextmoca/adl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nextmoca/adl/issues"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "adl",
+    "dsl",
+    "agent",
+    "language",
+    "syntax",
+    "highlighting"
+  ]
+}
