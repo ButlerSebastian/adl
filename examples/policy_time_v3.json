@@ -15,7 +15,7 @@
     "max_tokens": 2000
   },
   "policy": {
-    "id": "time-policy",
+    "policy_id": "time_policy_agent:policy-time",
     "name": "Time-Based Policy",
     "version": "1.0.0",
     "description": "Time-based access control policy with business hours and weekend restrictions",

@@ -25,10 +25,26 @@ class PolicyValidator:
 
     def __init__(self):
         self.errors: List[ValidationError] = []
+        self.warnings: List[ValidationError] = []
+
+    def _is_hierarchical_id(self, id_str: str) -> bool:
+        """Check if ID follows hierarchical format (e.g., 'org.team.component')."""
+        import re
+        pattern = r'^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$'
+        return bool(re.match(pattern, id_str))
+
+    def _add_deprecation_warning(self, field: str, old_field: str, new_field: str) -> None:
+        """Add deprecation warning for old field name."""
+        self.warnings.append(ValidationError(
+            field=field,
+            message=f"Field '{old_field}' is deprecated. Use '{new_field}' instead.",
+            severity="warning"
+        ))
 
     def validate(self, policy: Dict[str, Any]) -> List[ValidationError]:
         """Validate policy configuration."""
         self.errors = []
+        self.warnings = []
 
         if not policy:
             return []
@@ -42,7 +58,27 @@ class PolicyValidator:
 
     def _validate_structure(self, policy: Dict[str, Any]) -> None:
         """Validate policy structure."""
-        required_fields = ["id", "name", "version", "rego", "enforcement"]
+        # Support both old 'id' and new 'policy_id' field names
+        policy_id = policy.get("policy_id") or policy.get("id")
+        if not policy_id:
+            self.errors.append(ValidationError(
+                field="policy_id",
+                message="Policy must have a 'policy_id' field (or 'id' for backward compatibility)"
+            ))
+        else:
+            # Check for deprecation warning
+            if "id" in policy and "policy_id" not in policy:
+                self._add_deprecation_warning("policy", "id", "policy_id")
+
+            # Validate hierarchical ID format
+            if not self._is_hierarchical_id(policy_id):
+                self.warnings.append(ValidationError(
+                    field="policy_id",
+                    message=f"Policy ID '{policy_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
+                    severity="warning"
+                ))
+
+        required_fields = ["name", "version", "rego", "enforcement"]
         for field in required_fields:
             if field not in policy:
                 self.errors.append(ValidationError(

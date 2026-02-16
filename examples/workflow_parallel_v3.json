@@ -15,13 +15,12 @@
     "max_tokens": 2000
   },
   "workflow": {
-    "id": "parallel-data-processing",
+    "workflow_id": "parallel_workflow_agent:Parallel Data Processing",
     "name": "Parallel Data Processing",
     "version": "1.0.0",
     "description": "Parallel workflow for processing data through multiple concurrent stages",
     "nodes": {
       "input-node": {
-        "id": "input-node",
         "type": "input",
         "label": "Read Data",
         "config": {
@@ -32,7 +31,6 @@
         "position": { "x": 100, "y": 200 }
       },
       "process-a": {
-        "id": "process-a",
         "type": "transform",
         "label": "Process A",
         "config": {
@@ -42,7 +40,6 @@
         "position": { "x": 300, "y": 50 }
       },
       "process-b": {
-        "id": "process-b",
         "type": "transform",
         "label": "Process B",
         "config": {
@@ -52,7 +49,6 @@
         "position": { "x": 300, "y": 200 }
       },
       "process-c": {
-        "id": "process-c",
         "type": "transform",
         "label": "Process C",
         "config": {
@@ -62,7 +58,6 @@
         "position": { "x": 300, "y": 350 }
       },
       "merge-node": {
-        "id": "merge-node",
         "type": "transform",
         "label": "Merge Results",
         "config": {
@@ -72,7 +67,6 @@
         "position": { "x": 500, "y": 200 }
       },
       "output-node": {
-        "id": "output-node",
         "type": "output",
         "label": "Save Results",
         "config": {
@@ -85,43 +79,43 @@
     },
     "edges": [
       {
-        "id": "edge-1",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-1",
         "source": "input-node",
         "target": "process-a",
         "relation": "data_flow"
       },
       {
-        "id": "edge-2",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-2",
         "source": "input-node",
         "target": "process-b",
         "relation": "data_flow"
       },
       {
-        "id": "edge-3",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-3",
         "source": "input-node",
         "target": "process-c",
         "relation": "data_flow"
       },
       {
-        "id": "edge-4",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-4",
         "source": "process-a",
         "target": "merge-node",
         "relation": "data_flow"
       },
       {
-        "id": "edge-5",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-5",
         "source": "process-b",
         "target": "merge-node",
         "relation": "data_flow"
       },
       {
-        "id": "edge-6",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-6",
         "source": "process-c",
         "target": "merge-node",
         "relation": "data_flow"
       },
       {
-        "id": "edge-7",
+        "edge_id": "parallel_workflow_agent:Parallel Data Processing:edge-7",
         "source": "merge-node",
         "target": "output-node",
         "relation": "data_flow"

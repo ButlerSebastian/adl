@@ -3,9 +3,13 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "id": {
+    "index_id": {
       "type": "string",
       "description": "Unique ID of the RAG index."
+    },
+    "id": {
+      "type": "string",
+      "description": "DEPRECATED: Use index_id instead. Unique ID of the RAG index."
     },
     "name": {
       "type": "string",
@@ -37,7 +41,7 @@
     }
   },
   "required": [
-    "id",
+    "index_id",
     "name",
     "rag_type",
     "virtual_index_path",

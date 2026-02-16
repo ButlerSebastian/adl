@@ -173,8 +173,7 @@ export class ADLDiagnosticsProvider {
 
             const workflowData = workflow.workflow;
 
-            // Validate required fields
-            const requiredFields = ['id', 'name', 'version', 'nodes', 'edges'];
+            const requiredFields = ['workflow_id', 'id', 'name', 'version', 'nodes', 'edges'];
             for (const field of requiredFields) {
                 if (!(field in workflowData)) {
                     const range = this.findFieldRange(content, 'workflow', field);
@@ -185,6 +184,17 @@ export class ADLDiagnosticsProvider {
                             vscode.DiagnosticSeverity.Error
                         ));
                     }
+                }
+            }
+
+            if ('id' in workflowData && !('workflow_id' in workflowData)) {
+                const range = this.findFieldRange(content, 'workflow', 'id');
+                if (range) {
+                    diagnostics.push(new vscode.Diagnostic(
+                        range,
+                        'Deprecated: Use workflow_id instead of id for workflows',
+                        vscode.DiagnosticSeverity.Warning
+                    ));
                 }
             }
 
@@ -261,18 +271,6 @@ export class ADLDiagnosticsProvider {
                         }
                         nodeIds.add(nodeId);
 
-                        // Validate node structure
-                        if (!('id' in node)) {
-                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'id');
-                            if (range) {
-                                diagnostics.push(new vscode.Diagnostic(
-                                    range,
-                                    `Node '${nodeId}' must have an 'id' field`,
-                                    vscode.DiagnosticSeverity.Error
-                                ));
-                            }
-                        }
-
                         if (!('type' in node)) {
                             const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'type');
                             if (range) {
@@ -280,6 +278,17 @@ export class ADLDiagnosticsProvider {
                                     range,
                                     `Node '${nodeId}' must have a 'type' field`,
                                     vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        if ('id' in node) {
+                            const range = this.findFieldRange(content, 'workflow', 'nodes', nodeId, 'id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    'Warning: Node should not have an id field (use node key instead)',
+                                    vscode.DiagnosticSeverity.Warning
                                 ));
                             }
                         } else {
@@ -348,10 +357,9 @@ export class ADLDiagnosticsProvider {
                             continue;
                         }
 
-                        // Check for duplicate IDs
-                        const edgeId = edge.id;
+const edgeId = edge.edge_id || edge.id;
                         if (edgeId && edgeIds.has(edgeId)) {
-                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'id');
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'edge_id');
                             if (range) {
                                 diagnostics.push(new vscode.Diagnostic(
                                     range,
@@ -362,6 +370,28 @@ export class ADLDiagnosticsProvider {
                         }
                         if (edgeId) {
                             edgeIds.add(edgeId);
+                        }
+
+                        if (!('edge_id' in edge) && !('id' in edge)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'edge_id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    `Edge at index ${i} must have an 'edge_id' field`,
+                                    vscode.DiagnosticSeverity.Error
+                                ));
+                            }
+                        }
+
+                        if ('id' in edge && !('edge_id' in edge)) {
+                            const range = this.findFieldRange(content, 'workflow', 'edges', i, 'id');
+                            if (range) {
+                                diagnostics.push(new vscode.Diagnostic(
+                                    range,
+                                    'Deprecated: Use edge_id instead of id for edges',
+                                    vscode.DiagnosticSeverity.Warning
+                                ));
+                            }
                         }
 
                         // Validate edge structure
@@ -498,8 +528,7 @@ export class ADLDiagnosticsProvider {
 
             const policyData = policy.policy;
 
-            // Validate required fields
-            const requiredFields = ['id', 'name', 'version', 'rego', 'enforcement'];
+            const requiredFields = ['policy_id', 'id', 'name', 'version', 'rego', 'enforcement'];
             for (const field of requiredFields) {
                 if (!(field in policyData)) {
                     const range = this.findFieldRange(content, 'policy', field);
@@ -510,6 +539,17 @@ export class ADLDiagnosticsProvider {
                             vscode.DiagnosticSeverity.Error
                         ));
                     }
+                }
+            }
+
+            if ('id' in policyData && !('policy_id' in policyData)) {
+                const range = this.findFieldRange(content, 'policy', 'id');
+                if (range) {
+                    diagnostics.push(new vscode.Diagnostic(
+                        range,
+                        'Deprecated: Use policy_id instead of id for policies',
+                        vscode.DiagnosticSeverity.Warning
+                    ));
                 }
             }
 

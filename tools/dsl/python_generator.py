@@ -17,7 +17,7 @@ from .ast import (
 class PythonGenerator(ASTVisitor[str]):
     """
     Generates Python type definitions from ADL DSL AST.
-    
+
     Uses visitor pattern to traverse AST and build Python code.
     """
 
@@ -70,6 +70,9 @@ class PythonGenerator(ASTVisitor[str]):
 
     def visit_TypeDef(self, node: TypeDef) -> str:
         """Generate Python TypedDict from a type definition."""
+        if not node.body:
+            return f"class {node.name}(TypedDict):"
+        
         fields = []
         for field in node.body.fields:
             field_type = field.type.accept(self)
@@ -80,20 +83,46 @@ class PythonGenerator(ASTVisitor[str]):
         return f"class {node.name}(TypedDict):\n{fields_str}"
 
     def visit_AgentDef(self, node: AgentDef) -> str:
-        """Generate Python TypedDict from an agent definition."""
-        fields = []
-        for field in node.fields:
-            field_type = field.type.accept(self)
-            optional = "NotRequired" if field.optional else "Required"
-            fields.append(f'    {field.name}: {optional}[{field_type}]')
+        """Generate Python TypedDict from an agent definition.
 
-        fields_str = "\\n".join(fields)
-        return f"class {node.name}(TypedDict):\\n{fields_str}"
+        Note: The agent_id field is required for unique identification.
+        Use hierarchical ID format (e.g., "namespace.agent_name") for better organization.
+
+        DEPRECATED: The 'id' field is deprecated in favor of 'agent_id'.
+        """
+        fields = [
+            '    agent_id: Required[str]',
+            '    id: NotRequired[str]',  # DEPRECATED: Use agent_id instead
+            '    name: Required[str]',
+            '    description: Required[str]',
+            '    role: Required[str]',
+            '    llm: Required[str]',
+            '    llm_settings: Required[Dict[str, Any]]',
+            '    tools: Required[List[Dict[str, Any]]]',
+            '    rag: Required[List[Dict[str, Any]]]',
+            '    memory: Required[Dict[str, Any]]',
+            '    execution_constraints: Required[Dict[str, Any]]',
+            '    events: Required[Dict[str, Any]]',
+            '    lifecycle: Required[str]',
+            '    version: Required[int]',
+            '    version_string: Required[str]',
+            '    owner: Required[str]',
+            '    metadata: Required[Dict[str, Any]]'
+        ]
+        fields_str = "\n".join(fields)
+        return f"class {node.name}(TypedDict):\n{fields_str}"
 
     def visit_WorkflowDef(self, node: WorkflowDef) -> str:
-        """Generate Python TypedDict for a workflow definition."""
+        """Generate Python TypedDict for a workflow definition.
+
+        Note: The workflow_id field is required for unique identification.
+        Use hierarchical ID format (e.g., "namespace.workflow_name") for better organization.
+
+        DEPRECATED: The 'id' field is deprecated in favor of 'workflow_id'.
+        """
         fields = [
-            '    id: Required[str]',
+            '    workflow_id: Required[str]',
+            '    id: NotRequired[str]',  # DEPRECATED: Use workflow_id instead
             '    name: Required[str]',
             '    version: Required[str]',
             '    description: Required[str]',
@@ -101,44 +130,64 @@ class PythonGenerator(ASTVisitor[str]):
             '    edges: Required[List[WorkflowEdgeDef]]',
             '    metadata: Required[Dict[str, Any]]'
         ]
-        fields_str = "\\n".join(fields)
+        fields_str = "\n".join(fields)
         # Sanitize class name to be valid Python identifier
         class_name = node.name.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\\n{fields_str}"
+        return f"class {class_name}(TypedDict):\n{fields_str}"
 
     def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> str:
-        """Generate Python TypedDict for a workflow node definition."""
+        """Generate Python TypedDict for a workflow node definition.
+
+        Note: The node key in the nodes dictionary serves as the node ID.
+        Use hierarchical ID format (e.g., "namespace.node_name") for better organization.
+
+        DEPRECATED: The 'id' field is deprecated as node keys serve as IDs.
+        """
         fields = [
-            '    id: Required[str]',
             '    type: Required[str]',
             '    label: Required[str]',
             '    config: Required[Dict[str, Any]]',
-            '    position: Required[Dict[str, int]]'
+            '    position: Required[Dict[str, int]]',
+            '    id: NotRequired[str]'  # DEPRECATED: Use node key instead
         ]
-        fields_str = "\\n".join(fields)
+        fields_str = "\n".join(fields)
         # Use id as class name (nodes don't have a name field)
         class_name = node.id.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\\n{fields_str}"
+        return f"class {class_name}(TypedDict):\n{fields_str}"
 
     def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> str:
-        """Generate Python TypedDict for a workflow edge definition."""
+        """Generate Python TypedDict for a workflow edge definition.
+
+        Note: The edge_id field is required for unique identification.
+        Use hierarchical ID format (e.g., "namespace.edge_name") for better organization.
+
+        DEPRECATED: The 'id' field is deprecated in favor of 'edge_id'.
+        """
         fields = [
-            '    id: Required[str]',
+            '    edge_id: Required[str]',
+            '    id: NotRequired[str]',  # DEPRECATED: Use edge_id instead
             '    source: Required[str]',
             '    target: Required[str]',
             '    relation: Required[str]',
             '    condition: NotRequired[Dict[str, Any]]',
             '    metadata: NotRequired[Dict[str, Any]]'
         ]
-        fields_str = "\\n".join(fields)
+        fields_str = "\n".join(fields)
         # Use id as class name (edges don't have a name field)
         class_name = node.id.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\\n{fields_str}"
+        return f"class {class_name}(TypedDict):\n{fields_str}"
 
     def visit_PolicyDef(self, node: PolicyDef) -> str:
-        """Generate Python TypedDict for a policy definition."""
+        """Generate Python TypedDict for a policy definition.
+
+        Note: The policy_id field is required for unique identification.
+        Use hierarchical ID format (e.g., "namespace.policy_name") for better organization.
+
+        DEPRECATED: The 'id' field is deprecated in favor of 'policy_id'.
+        """
         fields = [
-            '    id: Required[str]',
+            '    policy_id: Required[str]',
+            '    id: NotRequired[str]',  # DEPRECATED: Use policy_id instead
             '    name: Required[str]',
             '    version: Required[str]',
             '    description: Required[str]',
@@ -147,8 +196,8 @@ class PythonGenerator(ASTVisitor[str]):
             '    data: Required[Dict[str, Any]]',
             '    metadata: Required[Dict[str, Any]]'
         ]
-        fields_str = "\\n".join(fields)
-        return f"class {node.name}(TypedDict):\\n{fields_str}"
+        fields_str = "\n".join(fields)
+        return f"class {node.name}(TypedDict):\n{fields_str}"
 
     def visit_EnforcementDef(self, node: EnforcementDef) -> str:
         """Generate Python TypedDict for an enforcement definition."""
@@ -157,10 +206,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    action: Required[str]',
             '    audit_log: Required[bool]'
         ]
-        fields_str = "\\n".join(fields)
+        fields_str = "\n".join(fields)
         # Use enforcement as class name
         class_name = "Enforcement"
-        return f"class {class_name}(TypedDict):\\n{fields_str}"
+        return f"class {class_name}(TypedDict):\n{fields_str}"
 
     def visit_PolicyDataDef(self, node: PolicyDataDef) -> str:
         """Generate Python TypedDict for a policy data definition."""
@@ -168,10 +217,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    roles: Required[Dict[str, List[str]]]',
             '    permissions: Required[Dict[str, Any]]'
         ]
-        fields_str = "\\n".join(fields)
+        fields_str = "\n".join(fields)
         # Use policy_data as class name
         class_name = "PolicyData"
-        return f"class {class_name}(TypedDict):\\n{fields_str}"
+        return f"class {class_name}(TypedDict):\n{fields_str}"
 
     def visit_PrimitiveType(self, node: PrimitiveType) -> str:
         """Generate Python type for a primitive type."""

@@ -5,9 +5,13 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
-    "id": {
+    "agent_id": {
       "type": "string",
       "description": "Unique identifier for this agent (UUID or similar)."
+    },
+    "id": {
+      "type": "string",
+      "description": "DEPRECATED: Use agent_id instead. Unique identifier for this agent (UUID or similar)."
     },
     "version": {
       "type": "integer",
@@ -1644,14 +1648,18 @@
         }
       }
     },
-    "workflow": {
+"workflow": {
       "type": "object",
       "description": "Workflow and DAG definitions for multi-agent orchestration. Enables complex multi-step workflows with dependencies, parallel execution, and conditional branching.",
       "additionalProperties": false,
       "properties": {
+        "workflow_id": {
+          "type": "string",
+          "description": "Unique workflow identifier. Recommended format: 'agent-001:workflow-001' for hierarchical naming."
+        },
         "id": {
           "type": "string",
-          "description": "Unique workflow identifier."
+          "description": "DEPRECATED: Use workflow_id instead. Unique workflow identifier."
         },
         "name": {
           "type": "string",
@@ -1660,7 +1668,7 @@
         "version": {
           "type": "string",
           "description": "Workflow version (semantic versioning).",
-          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          "pattern": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+$"
         },
         "description": {
           "type": "string",
@@ -1672,7 +1680,7 @@
         },
         "nodes": {
           "type": "object",
-          "description": "Workflow nodes (steps/tasks).",
+          "description": "Workflow nodes (steps/tasks). Node keys serve as unique identifiers.",
           "additionalProperties": {
             "$ref": "#/$defs/WorkflowNode"
           }
@@ -1690,21 +1698,25 @@
         }
       },
       "required": [
-        "id",
+        "workflow_id",
         "name",
         "version",
         "nodes",
         "edges"
       ]
-    },
-    "policy": {
+},
+"policy": {
       "type": "object",
       "description": "Policy-as-Code configuration using OPA/Rego for declarative access control and security policies.",
       "additionalProperties": false,
       "properties": {
+        "policy_id": {
+          "type": "string",
+          "description": "Unique policy identifier. Recommended format: 'agent-001:policy-001' for hierarchical naming."
+        },
         "id": {
           "type": "string",
-          "description": "Unique policy identifier."
+          "description": "DEPRECATED: Use policy_id instead. Unique policy identifier."
         },
         "name": {
           "type": "string",
@@ -1713,7 +1725,7 @@
         "version": {
           "type": "string",
           "description": "Policy version (semantic versioning).",
-          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          "pattern": "^\\\\d+\\\\.\\\\d+\\\\.\\\\d+$"
         },
         "description": {
           "type": "string",
@@ -1767,7 +1779,7 @@
         }
       },
       "required": [
-        "id",
+        "policy_id",
         "name",
         "version",
         "rego",
@@ -1786,13 +1798,9 @@
   "$defs": {
     "WorkflowNode": {
       "type": "object",
-      "description": "A workflow node representing a step or task.",
+      "description": "A workflow node representing a step or task. The node key serves as the unique identifier.",
       "additionalProperties": false,
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique node identifier."
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -1834,7 +1842,6 @@
         }
       },
       "required": [
-        "id",
         "type",
         "label"
       ]
@@ -1844,17 +1851,21 @@
       "description": "A workflow edge representing a connection between nodes.",
       "additionalProperties": false,
       "properties": {
-        "id": {
+        "edge_id": {
           "type": "string",
           "description": "Unique edge identifier."
         },
+        "id": {
+          "type": "string",
+          "description": "DEPRECATED: Use edge_id instead. Unique edge identifier."
+        },
         "source": {
           "type": "string",
-          "description": "Source node ID."
+          "description": "Source node ID (key from nodes object)."
         },
         "target": {
           "type": "string",
-          "description": "Target node ID."
+          "description": "Target node ID (key from nodes object)."
         },
         "relation": {
           "type": "string",
@@ -1878,7 +1889,7 @@
         }
       },
       "required": [
-        "id",
+        "edge_id",
         "source",
         "target"
       ]

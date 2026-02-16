@@ -15,7 +15,7 @@
     "max_tokens": 2000
   },
   "policy": {
-    "id": "rbac-policy",
+    "policy_id": "rbac_policy_agent:policy-rbac",
     "name": "RBAC Policy",
     "version": "1.0.0",
     "description": "Role-based access control policy with admin and user roles",

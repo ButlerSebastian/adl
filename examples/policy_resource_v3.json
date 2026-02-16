@@ -15,7 +15,7 @@
     "max_tokens": 2000
   },
   "policy": {
-    "id": "resource-policy",
+    "policy_id": "resource_policy_agent:policy-resource",
     "name": "Resource-Based Policy",
     "version": "1.0.0",
     "description": "Resource-based access control policy with fine-grained permissions",
