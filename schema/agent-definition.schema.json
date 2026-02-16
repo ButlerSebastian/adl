@@ -521,6 +521,186 @@
         }
       },
       "description": "Execution constraints and capability negotiation."
+    },
+    "events": {
+      "type": "object",
+      "description": "Event-driven tool invocation configuration for v2 agents. Defines triggers, handlers, subscriptions, and routing.",
+      "additionalProperties": false,
+      "properties": {
+        "triggers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "trigger_type": {
+                "type": "string",
+                "enum": ["event", "time", "condition", "composite"],
+                "description": "Type of trigger."
+              },
+              "event_name": {
+                "type": "string",
+                "description": "Event name to trigger on."
+              },
+              "condition": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "description": "Field to evaluate."
+                  },
+                  "operator": {
+                    "type": "string",
+                    "enum": ["equals", "not_equals", "greater_than", "less_than", "contains"],
+                    "description": "Comparison operator."
+                  },
+                  "value": {
+                    "description": "Value to compare against."
+                  }
+                },
+                "description": "Condition to evaluate."
+              },
+              "schedule": {
+                "type": "string",
+                "description": "Cron expression for time-based triggers."
+              },
+              "operator": {
+                "type": "string",
+                "enum": ["and", "or"],
+                "description": "Operator for composite triggers."
+              },
+              "triggers": {
+                "type": "array",
+                "description": "Nested triggers for composite triggers."
+              }
+            },
+            "description": "Trigger configuration."
+          },
+          "description": "List of triggers."
+        },
+        "handlers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "handler_type": {
+                "type": "string",
+                "enum": ["tool_invocation", "state_update", "notification", "custom"],
+                "description": "Type of handler."
+              },
+              "tool_name": {
+                "type": "string",
+                "description": "Tool name to invoke."
+              },
+              "parameters": {
+                "type": "object",
+                "description": "Parameters for tool invocation."
+              },
+              "state_field": {
+                "type": "string",
+                "description": "State field to update."
+              },
+              "value": {
+                "description": "Value to set for state field."
+              },
+              "notification_type": {
+                "type": "string",
+                "enum": ["alert", "info", "warning", "error"],
+                "description": "Type of notification."
+              },
+              "message": {
+                "type": "string",
+                "description": "Notification message."
+              },
+              "handler_name": {
+                "type": "string",
+                "description": "Name of custom handler."
+              }
+            },
+            "description": "Handler configuration."
+          },
+          "description": "List of event handlers."
+        },
+        "subscriptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "subscription_type": {
+                "type": "string",
+                "enum": ["direct", "pattern", "filtered"],
+                "description": "Type of subscription."
+              },
+              "event_name": {
+                "type": "string",
+                "description": "Event name to subscribe to."
+              },
+              "event_pattern": {
+                "type": "string",
+                "description": "Event pattern to subscribe to."
+              },
+              "filter": {
+                "type": "object",
+                "description": "Filter conditions for subscription."
+              },
+              "handler": {
+                "type": "object",
+                "description": "Handler to invoke on event."
+              }
+            },
+            "description": "Subscription configuration."
+          },
+          "description": "List of event subscriptions."
+        },
+        "routing_strategy": {
+          "type": "string",
+          "enum": ["direct", "broadcast", "conditional"],
+          "description": "Event routing strategy."
+        },
+        "processing_mode": {
+          "type": "string",
+          "enum": ["synchronous", "asynchronous", "batch"],
+          "description": "Event processing mode."
+        },
+        "persistence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["memory", "file", "database"],
+              "description": "Type of persistence."
+            },
+            "max_events": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum events to store in memory."
+            },
+            "file_path": {
+              "type": "string",
+              "description": "File path for file-based persistence."
+            },
+            "rotation": {
+              "type": "string",
+              "enum": ["daily", "weekly", "monthly"],
+              "description": "Log rotation policy."
+            },
+            "connection_string": {
+              "type": "string",
+              "description": "Database connection string."
+            },
+            "table_name": {
+              "type": "string",
+              "description": "Database table name."
+            }
+          },
+          "description": "Event persistence configuration."
+        }
+      },
+      "description": "Event-driven tool invocation configuration."
     }
   },
   "required": [
