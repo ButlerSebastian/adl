@@ -145,15 +145,15 @@ Open sourcing ensures ADL becomes a **true standard**, not a proprietary configu
 
 ## 📘 Documentation
 
-- 📄 ADL Spec (JSON Schema) — `/schema/adl.schema.json`  
-- 📚 Examples — `/examples/`  
-- 📐 Roadmap — `/ROADMAP.md`  
-- 🏛 Governance — `/GOVERNANCE.md`  
-- 🤝 Contributing — `/CONTRIBUTING.md`  
-- 📖 Tool Category Taxonomy — `/docs/tool-category-taxonomy.md`  
-- 📖 Enhanced Type System — `/docs/enhanced-type-system.md`  
-- 📖 Return Type System — `/docs/return-type-system.md`  
-- 📖 Schema Reference — `/docs/schema-reference.md`  
+- 📄 ADL Spec (JSON Schema) — `/schema/adl.schema.json`
+- 📚 Examples — `/examples/`
+- 🛠 CLI Reference — `/docs/tools/cli.md`
+- 🏛 Governance — `/GOVERNANCE.md`
+- 🤝 Contributing — `/CONTRIBUTING.md`
+- 📖 Tool Category Taxonomy — `/docs/tool-category-taxonomy.md`
+- 📖 Enhanced Type System — `/docs/enhanced-type-system.md`
+- 📖 Return Type System — `/docs/return-type-system.md`
+- 📖 Schema Reference — `/docs/schema-reference.md`
 - 📖 Migration Guide v1.5 — `/docs/migration-v1.5.md`
 
 ---
@@ -168,6 +168,28 @@ ADL v1.5 introduces three major enhancements:
 
 For detailed migration instructions and examples, refer to the [Migration Guide v1.5](/docs/migration-v1.5.md).
 
+## 🎯 Phase 2: DSL Tooling (Complete)
+
+Phase 2 provides a comprehensive toolchain for working with ADL:
+
+### CLI Tools
+- **adl-compile**: Compile ADL files to JSON, YAML, Python, TypeScript
+- **adl-validate**: Validate ADL files against schema with strict mode
+- **adl-format**: Format ADL files with configurable options
+- **adl-lint**: Lint ADL files for code quality with autofix
+- **adl-generate**: Generate code from ADL definitions
+
+### IDE Support
+- **VS Code Extension**: Full-featured extension with syntax highlighting, diagnostics, auto-completion, go-to-definition, hover, and format-on-save
+- **LSP Server**: Language Server Protocol support for multiple editors
+
+### Documentation & Testing
+- Comprehensive CLI reference documentation
+- Integration tests for all CLI commands
+- Package installation via pip
+
+See [CLI Reference](docs/tools/cli.md) for complete documentation.
+
 ---
 
 ## 🛠 Getting Started
@@ -175,21 +197,54 @@ For detailed migration instructions and examples, refer to the [Migration Guide 
 ```bash
 git clone https://github.com/nextmoca/adl.git
 cd adl
+pip install -e .
 ```
 
-### Validate an ADL Agent File
+### CLI Tools
+
+ADL provides a comprehensive CLI toolchain:
 
 ```bash
-pip install jsonschema
-python tools/validate.py examples/minimal_agent.json
+# Validate ADL file
+adl-validate my-agent.adl
+
+# Compile to JSON
+adl-compile my-agent.adl -o my-agent.json
+
+# Format ADL file
+adl-format my-agent.adl
+
+# Lint ADL file
+adl-lint my-agent.adl
+
+# Generate code
+adl-generate my-agent.adl -f python -o my_agent.py
 ```
 
-Or using Node:
+See [CLI Reference](docs/tools/cli.md) for complete documentation.
 
-```bash
-npm install ajv
-node tools/validate.js examples/minimal_agent.json
-```
+### VS Code Extension
+
+Install the ADL VS Code extension for:
+- Syntax highlighting
+- Error diagnostics
+- Auto-completion
+- Go to definition
+- Hover information
+- Format on save
+
+Available in the `editors/vscode/` directory.
+
+### LSP Server
+
+ADL provides a Language Server Protocol server for editor integration:
+- Diagnostics
+- Completion
+- Definition
+- Hover
+- Formatting
+
+See `tools/dsl/lsp_server.py` for implementation.
 
 ---
 
