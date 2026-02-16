@@ -62,7 +62,8 @@ def create_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument(
         'input',
         type=Path,
-        help='Input JSON file to validate'
+        nargs='+',
+        help='Input JSON file(s) to validate (supports multiple files)'
     )
     validate_parser.add_argument(
         '--schema',
@@ -73,6 +74,11 @@ def create_parser() -> argparse.ArgumentParser:
         '--verbose',
         action='store_true',
         help='Show detailed validation results'
+    )
+    validate_parser.add_argument(
+        '--batch',
+        action='store_true',
+        help='Batch mode: validate multiple files and show summary'
     )
 
     format_parser = subparsers.add_parser(
@@ -194,14 +200,11 @@ def cmd_compile(args) -> int:
 
 
 def cmd_validate(args) -> int:
-    """Validate JSON against DSL schema."""
+    """Validate JSON against DSL schema with batch support."""
     try:
         import json
 
         parser = GrammarParser()
-
-        with open(args.input, 'r') as f:
-            json_data = json.load(f)
 
         schema_file = args.schema or Path('schema/agent-definition.adl')
         with open(schema_file, 'r') as f:
@@ -209,16 +212,42 @@ def cmd_validate(args) -> int:
 
         program = parser.parse(schema_content)
         validator = SemanticValidator()
-        errors = validator.validate(program)
+        schema_errors = validator.validate(program)
 
-        if errors:
-            print(f"✗ Validation failed with {len(errors)} error(s):", file=sys.stderr)
-            for error in errors:
+        if schema_errors:
+            print(f"✗ Schema validation failed with {len(schema_errors)} error(s):", file=sys.stderr)
+            for error in schema_errors:
                 print(f"  - {error}", file=sys.stderr)
             return 1
-        else:
-            print(f"✓ {args.input} is valid")
-            return 0
+
+        input_files = args.input if isinstance(args.input, list) else [args.input]
+        total_files = len(input_files)
+        valid_files = 0
+        invalid_files = 0
+
+        for input_file in input_files:
+            try:
+                with open(input_file, 'r') as f:
+                    json_data = json.load(f)
+
+                if args.verbose:
+                    print(f"\nValidating {input_file}...")
+
+                print(f"✓ {input_file} is valid")
+                valid_files += 1
+            except Exception as e:
+                print(f"✗ {input_file}: {e}", file=sys.stderr)
+                invalid_files += 1
+
+        if args.batch or total_files > 1:
+            print(f"\n{'='*50}")
+            print(f"Validation Summary:")
+            print(f"  Total: {total_files}")
+            print(f"  Valid: {valid_files}")
+            print(f"  Invalid: {invalid_files}")
+            print(f"{'='*50}")
+
+        return 0 if invalid_files == 0 else 1
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
