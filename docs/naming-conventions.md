@@ -398,3 +398,157 @@ For backward compatibility, consider providing:
 ## Version History
 
 - **v1.5** (2026-02-15): Initial naming convention specification
+- **v1.5.1** (2026-02-16): Added specific analysis of agent-definition.schema.json naming patterns and inconsistencies
+
+## Current Schema Analysis
+
+### Agent Definition Schema (`schema/agent-definition.schema.json`)
+
+The main agent definition schema follows these naming patterns:
+
+#### ID Fields (Pattern: `*_id`)
+- `agent_id` - Unique agent identifier
+- `document_index_id` - RAG index identifier
+- `workflow_id` - Workflow identifier
+- `policy_id` - Policy identifier
+- `node_id` - Workflow node identifier
+
+#### Version Fields (Pattern: `version` or `version_string`)
+- `version` - Integer version number
+- `version_string` - Semantic version string
+- `schema_version` - Schema version
+
+#### Boolean Fields (Pattern: `is_*`, `has_*`, `can_*`)
+- `is_active` - Active status
+- `has_permissions` - Permission presence
+- `can_execute` - Execution capability
+- `enabled` - Enable/disable flag
+- `audit` - Audit logging flag
+- `require_encryption` - Encryption requirement
+- `cost_tracking_enabled` - Cost tracking flag
+
+#### Timestamp Fields (Pattern: `*_at`, `*_on`)
+- `created_at` - Creation timestamp
+- `updated_on` - Last update timestamp
+- `expires_at` - Expiration timestamp
+
+#### Array Fields (Pattern: Plural Nouns)
+- `tools` - Array of tool definitions
+- `rag` - Array of RAG index configurations
+- `events` - Array of event definitions
+- `permissions` - Array of permission definitions
+- `constraints` - Array of constraint definitions
+- `subscriptions` - Array of event subscriptions
+
+#### Object Fields (Pattern: Descriptive Nouns)
+- `identity` - Agent identity information
+- `llm` - LLM configuration
+- `capabilities` - Agent capabilities
+- `governance` - Governance settings
+- `orchestration` - Orchestration configuration
+- `workflow` - Workflow definition
+- `policy` - Policy definition
+
+### Naming Inconsistencies Identified
+
+#### 1. Boolean Field Pattern Variations
+**Issue**: Boolean fields use multiple prefixes
+- `is_*` prefix: `is_active`, `is_active` (in execution_constraints)
+- `has_*` prefix: `has_permissions`, `has_permissions` (in execution_constraints)
+- `can_*` prefix: `can_execute`, `can_execute` (in execution_constraints)
+- Simple names: `enabled`, `audit`, `require_encryption`, `cost_tracking_enabled`
+
+**Impact**: Inconsistent autocomplete and harder to predict field names
+
+**Recommendation**: Standardize on one pattern for new fields:
+- Use `is_*` for boolean checks (preferred)
+- Use `has_*` for possession/capability checks
+- Use `can_*` for permission checks
+- Use simple names for enable/disable flags (e.g., `enabled`)
+
+#### 2. Timestamp Field Pattern Variations
+**Issue**: Timestamp fields use both `*_at` and `*_on` suffixes
+- `*_at` suffix: `created_at`, `expires_at`, `updated_at`
+- `*_on` suffix: `updated_on`
+
+**Impact**: Inconsistent naming makes it harder to predict timestamp field names
+
+**Recommendation**: Standardize on `*_at` suffix for all timestamp fields
+
+#### 3. Deprecated Fields
+**Issue**: The schema maintains deprecated fields for backward compatibility
+- `id` (deprecated) → `agent_id` (current)
+- `version` (in Identity) → `version_string` (current)
+
+**Impact**: Confusion for users about which field to use
+
+**Recommendation**: Mark deprecated fields clearly and provide migration guidance
+
+### Field Naming Patterns Summary
+
+| Pattern | Examples | Usage |
+|---------|----------|-------|
+| `*_id` | `agent_id`, `document_index_id`, `workflow_id` | Unique identifiers |
+| `version` / `version_string` | `version`, `version_string`, `schema_version` | Version information |
+| `is_*` | `is_active`, `is_active` | Boolean checks |
+| `has_*` | `has_permissions`, `has_permissions` | Possession/capability |
+| `can_*` | `can_execute`, `can_execute` | Permission checks |
+| `*_at` | `created_at`, `expires_at` | Timestamps |
+| `*_on` | `updated_on` | Timestamps (deprecated) |
+| Plural nouns | `tools`, `rag`, `events` | Arrays |
+| Descriptive nouns | `identity`, `llm`, `capabilities` | Objects |
+
+### Guidelines for Future Additions
+
+When adding new fields to the schema:
+
+1. **Choose the Right Pattern**:
+   - Use `*_id` for unique identifiers
+   - Use `version` or `version_string` for version information
+   - Use `is_*`, `has_*`, or `can_*` for boolean flags
+   - Use `*_at` for timestamps (not `*_on`)
+   - Use plural nouns for arrays
+
+2. **Follow Snake Case**:
+   - Use lowercase letters
+   - Separate words with underscores
+   - No camelCase or PascalCase
+
+3. **Be Descriptive**:
+   - Field names should clearly indicate their purpose
+   - Include units in field names (e.g., `*_ms`, `*_mb`, `*_usd`)
+
+4. **Consider Deprecated Fields**:
+   - If renaming an existing field, mark the old field as deprecated
+   - Provide a clear migration path
+   - Document the deprecation in the schema
+
+### Examples of Good Field Names
+
+```json
+{
+  "agent_id": "uuid",
+  "version_string": "1.2.0",
+  "is_active": true,
+  "has_permissions": true,
+  "can_execute": false,
+  "created_at": "2024-01-15T10:30:00Z",
+  "max_execution_time_ms": 5000,
+  "tools": [],
+  "permissions": {}
+}
+```
+
+### Examples of Bad Field Names
+
+```json
+{
+  "agentID": "uuid",           // ❌ Should be snake_case
+  "version": "1.2.0",          // ⚠️ Use version_string for semantic versions
+  "active": true,              // ❌ Should be is_active
+  "created": "2024-01-15",     // ❌ Should be created_at
+  "maxTime": 5000,             // ❌ Should be max_execution_time_ms
+  "toolList": [],              // ❌ Should be tools
+  "perm": {}                   // ❌ Should be permissions
+}
+```

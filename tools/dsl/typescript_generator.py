@@ -4,7 +4,7 @@ TypeScript Code Generator for ADL DSL
 This module generates TypeScript type definitions from ADL DSL ASTs.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
@@ -12,18 +12,143 @@ from .adl_ast import (
     WorkflowDef, WorkflowNodeDef, WorkflowEdgeDef,
     PolicyDef, EnforcementDef
 )
+import subprocess
+import tempfile
+import os
 
 
 class TypeScriptGenerator(ASTVisitor[str]):
     """
     Generates TypeScript type definitions from ADL DSL AST.
-    
+
     Uses visitor pattern to traverse AST and build TypeScript code.
     """
 
     def __init__(self):
         self.indent_level = 0
         self.lines: List[str] = []
+
+    def validate_typescript_syntax(self, code: str) -> Tuple[bool, Optional[str]]:
+        """
+        Validate TypeScript syntax using tsc.
+
+        Args:
+            code: TypeScript code to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        try:
+            # Create a temporary file with the code
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.ts', delete=False) as f:
+                f.write(code)
+                temp_file = f.name
+
+            try:
+                # Run tsc --noEmit to check syntax without generating output
+                result = subprocess.run(
+                    ['tsc', '--noEmit', '--skipLibCheck', temp_file],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+
+                if result.returncode != 0 and result.stdout:
+                    # Parse tsc output
+                    error_lines = []
+                    for line in result.stdout.split('\n'):
+                        if line.strip():
+                            error_lines.append(line.strip())
+
+                    if error_lines:
+                        return False, "\n".join(error_lines)
+
+                return True, None
+
+            except subprocess.TimeoutExpired:
+                return False, "TypeScript compilation timed out (10s)"
+            except FileNotFoundError:
+                # tsc not available, skip syntax validation
+                return True, None
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+
+        except Exception as e:
+            return False, f"TypeScript validation error: {str(e)}"
+
+    def validate_typescript_types(self, code: str) -> List[str]:
+        """
+        Validate TypeScript types using tsc --noEmit.
+
+        Args:
+            code: TypeScript code to validate
+
+        Returns:
+            List of type checking errors (empty if no errors)
+        """
+        errors = []
+
+        # Try to use tsc for type checking
+        try:
+            # Create a temporary file with the code
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.ts', delete=False) as f:
+                f.write(code)
+                temp_file = f.name
+
+            try:
+                # Run tsc --noEmit to check types without generating output
+                result = subprocess.run(
+                    ['tsc', '--noEmit', '--skipLibCheck', '--strict', temp_file],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+
+                if result.returncode != 0 and result.stdout:
+                    # Parse tsc output
+                    for line in result.stdout.split('\n'):
+                        if line.strip():
+                            errors.append(line.strip())
+
+            except subprocess.TimeoutExpired:
+                errors.append("Type checking timed out (10s)")
+            except FileNotFoundError:
+                # tsc not available, skip type checking
+                pass
+            finally:
+                # Clean up temp file
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+
+        except Exception as e:
+            errors.append(f"Type checking error: {str(e)}")
+
+        return errors
+
+    def validate_generated_code(self, code: str) -> Tuple[bool, List[str]]:
+        """
+        Validate generated TypeScript code for syntax and types.
+
+        Args:
+            code: TypeScript code to validate
+
+        Returns:
+            Tuple of (is_valid, list_of_errors)
+        """
+        errors = []
+
+        # Validate syntax
+        is_valid, syntax_error = self.validate_typescript_syntax(code)
+        if not is_valid:
+            errors.append(syntax_error)
+
+        # Validate types
+        type_errors = self.validate_typescript_types(code)
+        errors.extend(type_errors)
+
+        return len(errors) == 0, errors
 
     def generate(self, program: Program) -> str:
         """
@@ -34,6 +159,9 @@ class TypeScriptGenerator(ASTVisitor[str]):
 
         Returns:
             TypeScript code as a string
+
+        Raises:
+            ValueError: If generated code fails validation
         """
         self.indent_level = 0
         self.lines = []
@@ -52,7 +180,15 @@ class TypeScriptGenerator(ASTVisitor[str]):
             self.lines.append(program.agent.accept(self))
             self.lines.append("")
 
-        return "\n".join(self.lines).strip()
+        code = "\n".join(self.lines).strip()
+
+        # Validate generated code
+        is_valid, errors = self.validate_generated_code(code)
+        if not is_valid:
+            error_msg = "Generated code validation failed:\n" + "\n".join(f"  - {err}" for err in errors)
+            raise ValueError(error_msg)
+
+        return code
 
     def visit_EnumDef(self, node: EnumDef) -> str:
         """Generate TypeScript enum from an enum definition."""
