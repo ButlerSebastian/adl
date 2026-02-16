@@ -189,3 +189,165 @@ done
 - See individual command documentation for detailed usage
 - Check [examples/](../../examples/) for sample ADL files
 - Read [DSL Design](../adl-dsl-design.md) for language specification
+
+---
+
+## adl-compile
+
+Compile ADL files to various output formats.
+
+### Usage
+
+```bash
+adl-compile [OPTIONS] INPUT_FILE
+```
+
+### Options
+
+- `-o, --output FILE` - Output file path (default: stdout)
+- `-f, --format FORMAT` - Output format: json, yaml, python, typescript (default: json)
+- `--include-source` - Include source ADL in output
+- `--validate` - Validate before compiling (default: true)
+- `--no-validate` - Skip validation
+- `-v, --verbose` - Enable verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+#### Compile to JSON
+
+```bash
+adl-compile my-agent.adl -o my-agent.json
+```
+
+#### Compile to YAML
+
+```bash
+adl-compile my-agent.adl -f yaml -o my-agent.yaml
+```
+
+#### Compile to Python
+
+```bash
+adl-compile my-agent.adl -f python -o my_agent.py
+```
+
+#### Compile to TypeScript
+
+```bash
+adl-compile my-agent.adl -f typescript -o my_agent.ts
+```
+
+#### Compile with source included
+
+```bash
+adl-compile my-agent.adl --include-source -o my-agent.json
+```
+
+#### Compile without validation
+
+```bash
+adl-compile my-agent.adl --no-validate -o my-agent.json
+```
+
+#### Compile to stdout
+
+```bash
+adl-compile my-agent.adl
+```
+
+### Output Formats
+
+#### JSON
+
+Standard JSON format with full ADL schema compliance:
+
+```json
+{
+  "name": "campaign_image_generator",
+  "description": "Generate a 1024x1024 marketing image from a creative brief.",
+  "role": "Creative Producer",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0,
+    "max_tokens": 4096
+  },
+  "tools": [...]
+}
+```
+
+#### YAML
+
+Human-readable YAML format:
+
+```yaml
+name: campaign_image_generator
+description: Generate a 1024x1024 marketing image from a creative brief.
+role: Creative Producer
+llm: openai
+llm_settings:
+  temperature: 0
+  max_tokens: 4096
+tools: [...]
+```
+
+#### Python
+
+Python class definitions:
+
+```python
+from typing import List, Optional
+from dataclasses import dataclass
+
+@dataclass
+class CampaignImageGenerator:
+    name: str = "campaign_image_generator"
+    description: str = "Generate a 1024x1024 marketing image from a creative brief."
+    role: str = "Creative Producer"
+    llm: str = "openai"
+    llm_settings: dict = None
+    tools: List[dict] = None
+```
+
+#### TypeScript
+
+TypeScript interface definitions:
+
+```typescript
+export interface CampaignImageGenerator {
+  name: string;
+  description: string;
+  role: string;
+  llm: string;
+  llm_settings: {
+    temperature: number;
+    max_tokens: number;
+  };
+  tools: Tool[];
+}
+```
+
+### Error Handling
+
+The compiler will exit with error code 2 if validation fails:
+
+```bash
+adl-compile invalid.adl
+# Error: Validation failed
+# Exit code: 2
+```
+
+### Best Practices
+
+1. **Always validate** before compiling (default behavior)
+2. **Use appropriate format** for your target platform
+3. **Include source** for debugging and traceability
+4. **Check exit codes** in scripts
+
+### Use Cases
+
+- **API Integration**: Compile to JSON for REST APIs
+- **Configuration**: Compile to YAML for deployment configs
+- **Python Projects**: Compile to Python for type-safe code
+- **TypeScript Projects**: Compile to TypeScript for frontend apps
+- **Documentation**: Compile to human-readable formats
