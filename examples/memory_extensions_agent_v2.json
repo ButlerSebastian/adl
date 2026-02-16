@@ -124,10 +124,10 @@
           "required": false
         },
         {
-          "name": "max_results": {
-            "type": "integer",
-            "description": "Maximum number of results to return.",
-            "required": false
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of results to return.",
+          "required": false
         }
       ],
       "returns": {
