@@ -351,3 +351,163 @@ adl-compile invalid.adl
 - **Python Projects**: Compile to Python for type-safe code
 - **TypeScript Projects**: Compile to TypeScript for frontend apps
 - **Documentation**: Compile to human-readable formats
+
+---
+
+## adl-validate
+
+Validate ADL files against the schema.
+
+### Usage
+
+```bash
+adl-validate [OPTIONS] INPUT_FILE
+```
+
+### Options
+
+- `-s, --schema FILE` - Custom schema file (default: built-in schema)
+- `--strict` - Enable strict validation mode
+- `--no-warnings` - Suppress warnings
+- `-v, --verbose` - Enable verbose output
+- `-h, --help` - Show help message
+
+### Examples
+
+#### Validate ADL file
+
+```bash
+adl-validate my-agent.adl
+```
+
+#### Validate with custom schema
+
+```bash
+adl-validate my-agent.adl -s custom-schema.json
+```
+
+#### Validate in strict mode
+
+```bash
+adl-validate my-agent.adl --strict
+```
+
+#### Validate without warnings
+
+```bash
+adl-validate my-agent.adl --no-warnings
+```
+
+#### Validate with verbose output
+
+```bash
+adl-validate my-agent.adl -v
+```
+
+### Validation Rules
+
+The validator checks for:
+
+1. **Schema Compliance**
+   - Required fields present
+   - Field types match schema
+   - Enum values valid
+   - Numeric constraints satisfied
+
+2. **Syntax Validation**
+   - Valid ADL syntax
+   - Proper nesting
+   - No duplicate keys
+
+3. **Semantic Validation**
+   - Type references exist
+   - Import paths valid
+   - Tool categories valid
+   - Return types defined
+
+4. **Best Practices** (in strict mode)
+   - Descriptions present
+   - Naming conventions followed
+   - No unused imports
+   - No circular dependencies
+
+### Output
+
+#### Success
+
+```bash
+adl-validate my-agent.adl
+# Valid: my-agent.adl
+# Exit code: 0
+```
+
+#### Error
+
+```bash
+adl-validate invalid.adl
+# Error: Missing required field 'name' at line 5
+# Exit code: 2
+```
+
+#### Warning
+
+```bash
+adl-validate my-agent.adl
+# Warning: Missing description for field 'user_id'
+# Valid: my-agent.adl (with warnings)
+# Exit code: 0
+```
+
+#### Strict Mode Error
+
+```bash
+adl-validate my-agent.adl --strict
+# Error: Type name should use PascalCase: 'myType'
+# Exit code: 2
+```
+
+### Error Messages
+
+The validator provides detailed error messages:
+
+- **Location**: Line and column number
+- **Issue**: Description of the problem
+- **Suggestion**: How to fix (when available)
+- **Context**: Relevant code snippet
+
+### Exit Codes
+
+- `0` - Valid (with or without warnings)
+- `2` - Validation error
+- `4` - File not found
+- `5` - Parse error
+
+### Best Practices
+
+1. **Validate early** - Validate before compiling or generating
+2. **Use strict mode** - Enforce best practices in CI/CD
+3. **Check exit codes** - Handle validation errors in scripts
+4. **Fix warnings** - Address warnings before deployment
+
+### CI/CD Integration
+
+```bash
+#!/bin/bash
+set -e
+
+# Validate all ADL files
+for file in $(find . -name "*.adl"); do
+    echo "Validating $file..."
+    adl-validate "$file" --strict --no-warnings
+done
+
+echo "All ADL files are valid!"
+```
+
+### Use Cases
+
+- **Pre-commit Hooks**: Validate before committing
+- **CI/CD Pipelines**: Ensure quality before deployment
+- **Development**: Catch errors early
+- **Code Review**: Validate changes
+- **Documentation**: Verify examples are valid
