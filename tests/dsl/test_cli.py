@@ -215,5 +215,129 @@ agent TestAgent {
             os.unlink(adl_file)
 
 
+class TestCLIValidate(unittest.TestCase):
+    """Test adl-validate command."""
+
+    def test_validate_valid_file(self):
+        """Test validating valid ADL file."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'validate', adl_file],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertIn('Valid', result.stdout)
+        finally:
+            os.unlink(adl_file)
+
+    def test_validate_invalid_file(self):
+        """Test validating invalid ADL file."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'validate', adl_file],
+                capture_output=True,
+                text=True
+            )
+            self.assertNotEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+    def test_validate_strict_mode(self):
+        """Test validating in strict mode."""
+        adl_content = """
+agent test_agent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'validate', adl_file, '--strict'],
+                capture_output=True,
+                text=True
+            )
+            self.assertNotEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+    def test_validate_verbose(self):
+        """Test validating with verbose output."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'validate', adl_file, '-v'],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+
 if __name__ == '__main__':
     unittest.main()
