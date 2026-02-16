@@ -3,6 +3,7 @@ import { ADLDiagnosticsProvider } from './diagnostics';
 import { ADLCompletionProvider } from './completion';
 import { ADLDefinitionProvider } from './definition';
 import { ADLHoverProvider } from './hover';
+import { ADLFormatter } from './formatter';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('ADL DSL extension is now active!');
@@ -58,6 +59,21 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerHoverProvider(
             'adl',
             hoverProvider
+        )
+    );
+
+    const formatterProvider = new ADLFormatter();
+    context.subscriptions.push(
+        vscode.languages.registerDocumentFormattingEditProvider(
+            'adl',
+            formatterProvider
+        )
+    );
+
+    context.subscriptions.push(
+        vscode.languages.registerDocumentRangeFormattingEditProvider(
+            'adl',
+            formatterProvider
         )
     );
 

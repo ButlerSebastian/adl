@@ -178,6 +178,74 @@ type Person {
 # **Type**: `string`
 ```
 
+## Format on Save
+
+The extension provides automatic formatting for ADL files:
+
+### Format on Save
+- Automatically formats the entire document when you save the file
+- Can be enabled/disabled via settings
+
+### Format Selection
+- Format only the selected text with `Shift+Alt+F`
+- Applies the same formatting rules to the selected range
+
+### Format on Paste
+- Automatically formats pasted content
+- Ensures consistent formatting when pasting code
+
+### Configuration
+
+The extension provides the following configuration options:
+
+```json
+{
+  "adl.format.enable": true,
+  "adl.format.indentSize": 2,
+  "adl.format.insertSpaces": true
+}
+```
+
+#### Settings
+
+- **adl.format.enable** (boolean, default: true)
+  - Enable or disable formatting for ADL files
+
+- **adl.format.indentSize** (number, default: 2)
+  - Number of spaces to use for indentation
+
+- **adl.format.insertSpaces** (boolean, default: true)
+  - Use spaces instead of tabs for indentation
+
+### Formatting Rules
+
+The formatter applies the following rules:
+
+- Consistent indentation (2 or 4 spaces based on configuration)
+- Consistent spacing around colons and commas
+- Consistent line breaks for braces, brackets, and parentheses
+- Trailing whitespace removal
+- Proper spacing in type annotations
+
+### Example
+
+```adl
+type Person {
+  name: string
+  age: integer
+  email?: string
+  tags: string[]
+}
+
+# After formatting:
+type Person {
+  name: string
+  age: integer
+  email?: string
+  tags: string[]
+}
+```
+
 ## Example
 
 ```adl

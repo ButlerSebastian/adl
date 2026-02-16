@@ -38,6 +38,9 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const diagnostics_1 = require("./diagnostics");
 const completion_1 = require("./completion");
+const definition_1 = require("./definition");
+const hover_1 = require("./hover");
+const formatter_1 = require("./formatter");
 function activate(context) {
     console.log('ADL DSL extension is now active!');
     const diagnosticsProvider = new diagnostics_1.ADLDiagnosticsProvider(context);
@@ -57,6 +60,26 @@ function activate(context) {
     vscode.workspace.textDocuments.forEach(updateDiagnostics);
     const completionProvider = new completion_1.ADLCompletionProvider();
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider('adl', completionProvider, ':', ' ', '\n'));
+    const definitionProvider = new definition_1.ADLDefinitionProvider();
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider('adl', definitionProvider));
+    const hoverProvider = new hover_1.ADLHoverProvider();
+    context.subscriptions.push(vscode.languages.registerHoverProvider('adl', hoverProvider));
+    const formatterProvider = new formatter_1.ADLFormatter();
+    context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider('adl', formatterProvider));
+    context.subscriptions.push(vscode.languages.registerDocumentRangeFormattingEditProvider('adl', formatterProvider));
+    const updateDefinitions = (document) => {
+        if (document.languageId === 'adl') {
+            definitionProvider.updateDefinitions(document, vscode.workspace.rootPath || '');
+            hoverProvider.updateDefinitions(document);
+        }
+    };
+    context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(updateDiagnostics));
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        updateDiagnostics(event.document);
+        updateDefinitions(event.document);
+    }));
+    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(updateDiagnostics));
+    vscode.workspace.textDocuments.forEach(updateDiagnostics);
 }
 function deactivate() {
     console.log('ADL DSL extension is now deactivated!');

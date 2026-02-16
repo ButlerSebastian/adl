@@ -33,7 +33,27 @@
         "uiTheme": "vs-dark",
         "path": "./themes/adl-color-theme.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "ADL",
+      "properties": {
+        "adl.format.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable formatting for ADL files"
+        },
+        "adl.format.indentSize": {
+          "type": "number",
+          "default": 2,
+          "description": "Number of spaces for indentation"
+        },
+        "adl.format.insertSpaces": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use spaces for indentation"
+        }
+      }
+    }
   },
   "repository": {
     "type": "git",
