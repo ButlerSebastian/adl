@@ -339,5 +339,231 @@ agent TestAgent {
             os.unlink(adl_file)
 
 
+class TestCLIFormat(unittest.TestCase):
+    """Test adl-format command."""
+
+    def test_format_file(self):
+        """Test formatting ADL file."""
+        adl_content = """
+agent TestAgent {
+  name:"test_agent"
+  description:"Test agent"
+  role:"Tester"
+  llm:"openai"
+  llm_settings:{
+    temperature:0.7
+    max_tokens:1000
+  }
+  tools:[]
+  rag:[]
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'format', adl_file],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+    def test_format_check(self):
+        """Test format check mode."""
+        adl_content = """
+agent TestAgent {
+  name:"test_agent"
+  description:"Test agent"
+  role:"Tester"
+  llm:"openai"
+  llm_settings:{
+    temperature:0.7
+    max_tokens:1000
+  }
+  tools:[]
+  rag:[]
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'format', adl_file, '--check'],
+                capture_output=True,
+                text=True
+            )
+            self.assertNotEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+
+class TestCLILint(unittest.TestCase):
+    """Test adl-lint command."""
+
+    def test_lint_file(self):
+        """Test linting ADL file."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'lint', adl_file],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+    def test_lint_with_severity(self):
+        """Test linting with severity filter."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'lint', adl_file, '--severity', 'error'],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+        finally:
+            os.unlink(adl_file)
+
+
+class TestCLIGenerate(unittest.TestCase):
+    """Test adl-generate command."""
+
+    def test_generate_python(self):
+        """Test generating Python code."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'generate', adl_file, '-f', 'python'],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertIn('class TestAgent', result.stdout)
+        finally:
+            os.unlink(adl_file)
+
+    def test_generate_typescript(self):
+        """Test generating TypeScript code."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'generate', adl_file, '-f', 'typescript'],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+            self.assertIn('interface TestAgent', result.stdout)
+        finally:
+            os.unlink(adl_file)
+
+    def test_generate_json_schema(self):
+        """Test generating JSON Schema."""
+        adl_content = """
+agent TestAgent {
+  name: "test_agent"
+  description: "Test agent"
+  role: "Tester"
+  llm: "openai"
+  llm_settings: {
+    temperature: 0.7
+    max_tokens: 1000
+  }
+  tools: []
+  rag: []
+}
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.adl', delete=False) as f:
+            f.write(adl_content)
+            adl_file = f.name
+
+        try:
+            result = subprocess.run(
+                ['python', '-m', 'tools.dsl.cli', 'generate', adl_file, '-f', 'json-schema'],
+                capture_output=True,
+                text=True
+            )
+            self.assertEqual(result.returncode, 0)
+            schema = json.loads(result.stdout)
+            self.assertIn('$schema', schema)
+        finally:
+            os.unlink(adl_file)
+
+
 if __name__ == '__main__':
     unittest.main()
