@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ADLDiagnosticsProvider } from './diagnostics';
 import { ADLCompletionProvider } from './completion';
 import { ADLDefinitionProvider } from './definition';
+import { ADLHoverProvider } from './hover';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('ADL DSL extension is now active!');
@@ -52,9 +53,18 @@ export function activate(context: vscode.ExtensionContext) {
         )
     );
 
+    const hoverProvider = new ADLHoverProvider();
+    context.subscriptions.push(
+        vscode.languages.registerHoverProvider(
+            'adl',
+            hoverProvider
+        )
+    );
+
     const updateDefinitions = (document: vscode.TextDocument) => {
         if (document.languageId === 'adl') {
             definitionProvider.updateDefinitions(document, vscode.workspace.rootPath || '');
+            hoverProvider.updateDefinitions(document);
         }
     };
 

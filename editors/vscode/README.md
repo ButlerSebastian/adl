@@ -129,7 +129,6 @@ The extension provides navigation to type and enum definitions:
 - Import statements: `import { Person } from './types'`
 
 ### Example
-
 ```adl
 # Import type from another file
 import { User } from './user'
@@ -141,6 +140,42 @@ type Profile {
 }
 
 # Navigate to User definition with F12
+```
+
+## Hover Information
+
+The extension provides hover information for types, enums, and fields:
+
+### Usage
+- Hover over a type name to see its fields
+- Hover over an enum name to see its values
+- Hover over a field name to see its type
+
+### Supported Hovers
+- **Type Hovers**: Show type name and all fields with their types
+- **Enum Hovers**: Show enum name and all possible values
+- **Field Hovers**: Show field name and its type
+
+### Example
+```adl
+type Person {
+  name: string
+  age: integer
+  email?: string
+}
+
+# Hover over 'Person' to see:
+# **Type**: `Person`
+#
+# **Fields**:
+# **name**: `string`
+# **age**: `integer`
+# **email**: `string?`
+
+# Hover over 'name' to see:
+# **Field**: `name`
+#
+# **Type**: `string`
 ```
 
 ## Example
