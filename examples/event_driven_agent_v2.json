@@ -1,0 +1,179 @@
+{
+  "id": "event-driven-agent-v2",
+  "version": 1,
+  "version_string": "2.0.0",
+  "lifecycle": "stable",
+  "name": "Event-Driven Research Agent",
+  "description": "Research agent with event-driven tool invocation for reactive behavior.",
+  "role": "Research Assistant",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.3,
+    "max_tokens": 2048
+  },
+  "events": {
+    "triggers": [
+      {
+        "trigger_type": "event",
+        "event_name": "tool_invocation",
+        "condition": {
+          "field": "tool_name",
+          "operator": "equals",
+          "value": "search_web"
+        }
+      },
+      {
+        "trigger_type": "condition",
+        "condition": {
+          "field": "memory_usage",
+          "operator": "greater_than",
+          "value": 0.9
+        }
+      }
+    ],
+    "handlers": [
+      {
+        "handler_type": "tool_invocation",
+        "tool_name": "log_search",
+        "parameters": {
+          "query": "${event.data.parameters.query}",
+          "timestamp": "${event.timestamp}"
+        }
+      },
+      {
+        "handler_type": "state_update",
+        "state_field": "last_search_time",
+        "value": "${event.timestamp}"
+      },
+      {
+        "handler_type": "notification",
+        "notification_type": "alert",
+        "message": "Memory usage exceeded threshold: ${event.data.memory_usage}"
+      }
+    ],
+    "subscriptions": [
+      {
+        "subscription_type": "filtered",
+        "event_name": "tool_invocation",
+        "filter": {
+          "field": "status",
+          "operator": "equals",
+          "value": "error"
+        },
+        "handler": {
+          "handler_type": "notification",
+          "notification_type": "error",
+          "message": "Tool invocation failed: ${event.data.error_message}"
+        }
+      },
+      {
+        "subscription_type": "pattern",
+        "event_pattern": "state_*",
+        "handler": {
+          "handler_type": "state_update",
+          "state_field": "last_state_change",
+          "value": "${event.timestamp}"
+        }
+      }
+    ],
+    "routing_strategy": "broadcast",
+    "processing_mode": "asynchronous",
+    "persistence": {
+      "type": "file",
+      "file_path": "/var/log/adl/events.json",
+      "rotation": "daily"
+    }
+  },
+  "tools": [
+    {
+      "name": "search_web",
+      "description": "Search the web for information.",
+      "category": "data_access.web_search",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of results to return.",
+          "required": false
+        }
+      ],
+      "returns": {
+        "type": "ListResult",
+        "description": "Search results.",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "snippet": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "log_search",
+      "description": "Log search query and timestamp.",
+      "category": "workflow.logging",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query to log.",
+          "required": true
+        },
+        {
+          "name": "timestamp",
+          "type": "string",
+          "description": "Timestamp of search.",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "OperationStatus",
+        "description": "Status of logging operation.",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "vector",
+    "retention": {
+      "policy": "ttl",
+      "duration": "7d"
+    },
+    "write_policy": "implicit",
+    "read_policy": "on_demand",
+    "privacy": {
+      "pii": false,
+      "encryption": true
+    }
+  }
+}
