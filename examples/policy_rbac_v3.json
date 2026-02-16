@@ -1,0 +1,157 @@
+{
+  "version": 3,
+  "version_string": "3.0.0",
+  "lifecycle": {
+    "status": "active",
+    "created_at": "2025-02-16T10:00:00Z",
+    "last_updated": "2025-02-16T10:00:00Z"
+  },
+  "name": "rbac_policy_agent",
+  "description": "Agent with role-based access control policy",
+  "role": "Secure Agent",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.7,
+    "max_tokens": 2000
+  },
+  "policy": {
+    "id": "rbac-policy",
+    "name": "RBAC Policy",
+    "version": "1.0.0",
+    "description": "Role-based access control policy with admin and user roles",
+    "rego": "package authz\n\ndefault allow := false\n\nallow if {\n    has_role(input.user, \"admin\")\n}\n\nallow if {\n    has_role(input.user, \"user\")\n    input.action == \"read\"\n}\n\nallow if {\n    has_role(input.user, \"user\")\n    input.resource == \"public\"\n}\n\nhas_role(user, role) {\n    data.roles[user][role]\n}",
+    "enforcement": {
+      "mode": "strict",
+      "action": "deny",
+      "audit_log": true
+    },
+    "data": {
+      "roles": {
+        "admin": ["alice", "bob"],
+        "user": ["charlie", "david", "eve"]
+      }
+    },
+    "metadata": {
+      "author": "security-team",
+      "tags": ["rbac", "access-control", "security"]
+    }
+  },
+  "tools": [
+    {
+      "name": "read_data",
+      "description": "Read data from resource",
+      "category": "data.read",
+      "parameters": [
+        {
+          "name": "resource",
+          "type": "string",
+          "description": "Resource to read",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns data from resource"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "write_data",
+      "description": "Write data to resource",
+      "category": "data.write",
+      "parameters": [
+        {
+          "name": "resource",
+          "type": "string",
+          "description": "Resource to write",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "object",
+          "description": "Data to write",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "SuccessResult",
+        "description": "Returns success status"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "delete_data",
+      "description": "Delete data from resource",
+      "category": "data.delete",
+      "parameters": [
+        {
+          "name": "resource",
+          "type": "string",
+          "description": "Resource to delete",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "SuccessResult",
+        "description": "Returns success status"
+      },
+      "invocation": { "type": "python_function" }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "sqlite",
+    "retention_days": 30,
+    "policies": {
+      "max_entries": 1000,
+      "max_size_mb": 100
+    },
+    "privacy": {
+      "encryption": true,
+      "anonymization": false
+    }
+  },
+  "permissions": {
+    "file_io": {
+      "read": true,
+      "write": true,
+      "allowed_paths": ["/workspace/*"]
+    },
+    "network": {
+      "enabled": true,
+      "allowed_domains": ["api.example.com"]
+    },
+    "env_vars": {
+      "allowed": ["API_KEY"]
+    }
+  },
+  "dependencies": {
+    "python": [
+      {
+        "name": "requests",
+        "version": ">=2.28.0"
+      },
+      {
+        "name": "opa",
+        "version": ">=0.46.0"
+      }
+    ]
+  },
+  "governance": {
+    "owner": "security-team",
+    "compliance": ["SOC2", "GDPR"],
+    "audit_log": true,
+    "change_log": [
+      {
+        "version": "3.0.0",
+        "date": "2025-02-16",
+        "changes": [
+          "Added RBAC policy with admin and user roles",
+          "Implemented strict enforcement with audit logging"
+        ]
+      }
+    ]
+  }
+}

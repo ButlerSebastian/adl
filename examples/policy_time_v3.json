@@ -1,0 +1,135 @@
+{
+  "version": 3,
+  "version_string": "3.0.0",
+  "lifecycle": {
+    "status": "active",
+    "created_at": "2025-02-16T10:00:00Z",
+    "last_updated": "2025-02-16T10:00:00Z"
+  },
+  "name": "time_policy_agent",
+  "description": "Agent with time-based access control policy",
+  "role": "Secure Agent",
+  "llm": "openai",
+  "llm_settings": {
+    "temperature": 0.7,
+    "max_tokens": 2000
+  },
+  "policy": {
+    "id": "time-policy",
+    "name": "Time-Based Policy",
+    "version": "1.0.0",
+    "description": "Time-based access control policy with business hours and weekend restrictions",
+    "rego": "package authz\n\ndefault allow := false\n\nallow if {\n    input.action == \"read\"\n    is_business_hours()\n}\n\nallow if {\n    input.action == \"read\"\n    is_weekend()\n}\n\nallow if {\n    input.user == \"admin\"\n}\n\nallow if {\n    input.action == \"admin\"\n    is_business_hours()\n}\n\nis_business_hours() if {\n    hour := time.clock(input.time).hour\n    hour >= 9\n    hour < 17\n}\n\nis_weekend() if {\n    day := time.clock(input.time).weekday\n    day == 0  # Sunday\n    day == 6  # Saturday\n}",
+    "enforcement": {
+      "mode": "moderate",
+      "action": "warn",
+      "audit_log": true
+    },
+    "data": {
+      "timezone": "UTC",
+      "business_hours": {
+        "start": 9,
+        "end": 17
+      }
+    },
+    "metadata": {
+      "author": "security-team",
+      "tags": ["time-based", "access-control", "business-hours"]
+    }
+  },
+  "tools": [
+    {
+      "name": "read_data",
+      "description": "Read data (restricted to business hours)",
+      "category": "data.read",
+      "parameters": [
+        {
+          "name": "resource",
+          "type": "string",
+          "description": "Resource to read",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "DataResult",
+        "description": "Returns data from resource"
+      },
+      "invocation": { "type": "python_function" }
+    },
+    {
+      "name": "admin_action",
+      "description": "Admin action (restricted to business hours)",
+      "category": "admin.action",
+      "parameters": [
+        {
+          "name": "action",
+          "type": "string",
+          "description": "Admin action to perform",
+          "required": true
+        }
+      ],
+      "returns": {
+        "type": "ActionResult",
+        "description": "Returns action result"
+      },
+      "invocation": { "type": "python_function" }
+    }
+  ],
+  "rag": [],
+  "memory": {
+    "type": "episodic",
+    "scope": "session",
+    "backend": "sqlite",
+    "retention_days": 30,
+    "policies": {
+      "max_entries": 1000,
+      "max_size_mb": 100
+    },
+    "privacy": {
+      "encryption": true,
+      "anonymization": false
+    }
+  },
+  "permissions": {
+    "file_io": {
+      "read": true,
+      "write": true,
+      "allowed_paths": ["/workspace/*"]
+    },
+    "network": {
+      "enabled": true,
+      "allowed_domains": ["api.example.com"]
+    },
+    "env_vars": {
+      "allowed": ["API_KEY"]
+    }
+  },
+  "dependencies": {
+    "python": [
+      {
+        "name": "requests",
+        "version": ">=2.28.0"
+      },
+      {
+        "name": "opa",
+        "version": ">=0.46.0"
+      }
+    ]
+  },
+  "governance": {
+    "owner": "security-team",
+    "compliance": ["SOC2"],
+    "audit_log": true,
+    "change_log": [
+      {
+        "version": "3.0.0",
+        "date": "2025-02-16",
+        "changes": [
+          "Added time-based access control policy",
+          "Implemented business hours and weekend restrictions",
+          "Admin bypass for critical operations"
+        ]
+      }
+    ]
+  }
+}
