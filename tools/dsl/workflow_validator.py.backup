@@ -7,6 +7,15 @@ Validates workflow field in ADL v3 agent definitions.
 from typing import List, Dict, Any, Set, Tuple
 from dataclasses import dataclass
 from collections import defaultdict, deque
+from functools import lru_cache
+
+
+class ErrorCategory:
+    """Categories for validation errors."""
+    SYNTAX = "syntax"
+    SEMANTIC = "semantic"
+    VALIDATION = "validation"
+    TYPE = "type"
 
 
 @dataclass
@@ -16,11 +25,64 @@ class ValidationError:
     field: str
     message: str
     severity: str = "error"
+    category: str = ErrorCategory.SEMANTIC
+
+
+@dataclass
+class ValidationErrorSummary:
+    """Summary of all validation errors grouped by category."""
+
+    total_errors: int
+    syntax_errors: List[ValidationError]
+    semantic_errors: List[ValidationError]
+    validation_errors: List[ValidationError]
+    type_errors: List[ValidationError]
+
+    def get_summary(self) -> str:
+        """Get human-readable summary of all errors."""
+        if self.total_errors == 0:
+            return "No validation errors found."
+
+        lines = [f"Found {self.total_errors} validation error(s):"]
+        lines.append("")
+
+        for category, errors in [
+            (ErrorCategory.SYNTAX, self.syntax_errors),
+            (ErrorCategory.SEMANTIC, self.semantic_errors),
+            (ErrorCategory.VALIDATION, self.validation_errors),
+            (ErrorCategory.TYPE, self.type_errors),
+        ]:
+            if errors:
+                lines.append(f"\n{category.upper()} ({len(errors)}):")
+                for error in errors:
+                    lines.append(f"  - {error.message} (field: {error.field})")
+
+        return "\n".join(lines)
+
+    def get_errors_by_category(self) -> Dict[str, List[ValidationError]]:
+        """Get errors grouped by category."""
+        return {
+            ErrorCategory.SYNTAX: self.syntax_errors,
+            ErrorCategory.SEMANTIC: self.semantic_errors,
+            ErrorCategory.VALIDATION: self.validation_errors,
+            ErrorCategory.TYPE: self.type_errors,
+        }
+
+    def has_errors(self) -> bool:
+        """Check if any errors exist."""
+        return self.total_errors > 0
+
+    def get_most_common_errors(self, n: int = 5) -> List[Tuple[str, int]]:
+        """Get most common error messages with counts."""
+        from collections import Counter
+
+        all_messages = [error.message for error in self.semantic_errors]
+        counter = Counter(all_messages)
+        return counter.most_common(n)
 
 
 class WorkflowValidator:
     """Validator for workflow configurations."""
-
     VALID_NODE_TYPES = [
         "trigger", "input", "transform", "action",
         "condition", "loop", "output", "sub_workflow", "annotation"
@@ -30,9 +92,35 @@ class WorkflowValidator:
         "ai_languageModel", "ai_tool", "dependency"
     ]
 
+    MAX_CRITICAL_ERRORS = 10
+
     def __init__(self):
-        self.errors: List[ValidationError] = []
-        self.warnings: List[ValidationError] = []
+        self._summary: ValidationErrorSummary = ValidationErrorSummary(
+            total_errors=0,
+            syntax_errors=[],
+            semantic_errors=[],
+            validation_errors=[],
+            type_errors=[]
+        )
+        self._cache: Dict[str, ValidationErrorSummary] = {}
+
+    def _add_error(self, category: str, field: str, message: str) -> None:
+        """Add an error to the validation summary."""
+        error = ValidationError(
+            field=field,
+            message=message,
+            category=category
+        )
+        self._summary.total_errors += 1
+
+        if category == ErrorCategory.SYNTAX:
+            self._summary.syntax_errors.append(error)
+        elif category == ErrorCategory.SEMANTIC:
+            self._summary.semantic_errors.append(error)
+        elif category == ErrorCategory.VALIDATION:
+            self._summary.validation_errors.append(error)
+        elif category == ErrorCategory.TYPE:
+            self._summary.type_errors.append(error)
 
     def _is_hierarchical_id(self, id_str: str) -> bool:
         """Check if ID follows hierarchical format (e.g., 'org.team.component')."""
@@ -40,20 +128,22 @@ class WorkflowValidator:
         pattern = r'^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$'
         return bool(re.match(pattern, id_str))
 
-    def _add_deprecation_warning(self, field: str, old_field: str, new_field: str) -> None:
-        """Add deprecation warning for old field name."""
-        self.warnings.append(ValidationError(
-            field=field,
-            message=f"Field '{old_field}' is deprecated. Use '{new_field}' instead.",
-            severity="warning"
-        ))
-
-    def validate(self, workflow: Dict[str, Any]) -> List[ValidationError]:
-        """Validate workflow configuration."""
-        self.errors = []
+def validate(self, workflow: Dict[str, Any]) -> ValidationErrorSummary:
+        """Validate workflow configuration. Returns ValidationErrorSummary."""
+        self._summary = ValidationErrorSummary(
+            total_errors=0,
+            syntax_errors=[],
+            semantic_errors=[],
+            validation_errors=[],
+            type_errors=[]
+        )
 
         if not workflow:
-            return []
+            return self._summary
+
+        cache_key = self._generate_cache_key(workflow)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
 
         self._validate_structure(workflow)
         self._validate_nodes(workflow)
@@ -61,101 +151,39 @@ class WorkflowValidator:
         self._validate_cycles(workflow)
         self._validate_connections(workflow)
 
-        return self.errors
+        self._cache[cache_key] = self._summary
 
-    def _validate_structure(self, workflow: Dict[str, Any]) -> None:
+        return self._summary
+
+def _validate_structure(self, workflow: Dict[str, Any]) -> None:
         """Validate workflow structure."""
-        # Support both old 'id' and new 'workflow_id' field names
         workflow_id = workflow.get("workflow_id") or workflow.get("id")
         if not workflow_id:
-            self.errors.append(ValidationError(
-                field="workflow_id",
-                message="Workflow must have a 'workflow_id' field (or 'id' for backward compatibility)"
-            ))
+            self._add_error(ErrorCategory.SEMANTIC, "workflow_id",
+                "Workflow must have a 'workflow_id' field (or 'id' for backward compatibility)")
         else:
-            # Check for deprecation warning
             if "id" in workflow and "workflow_id" not in workflow:
-                self._add_deprecation_warning("workflow", "id", "workflow_id")
+                self._add_error(ErrorCategory.SEMANTIC, "workflow",
+                    "Field 'id' is deprecated. Use 'workflow_id' instead.")
 
-            # Validate hierarchical ID format
             if not self._is_hierarchical_id(workflow_id):
-                self.warnings.append(ValidationError(
-                    field="workflow_id",
-                    message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
-                    severity="warning"
-                ))
-
-            # Validate hierarchical ID format
-            if not self._is_hierarchical_id(workflow_id):
-                self.warnings.append(ValidationError(
-                    field="workflow_id",
-                    message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
-                    severity="warning"
-                ))
+                self._add_error(ErrorCategory.SYNTAX, "workflow_id",
+                    f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.")
 
             required_fields = ["name", "version", "nodes", "edges"]
             for field in required_fields:
                 if field not in workflow:
-                    self.errors.append(ValidationError(
-                        field=field,
-                        message=f"Workflow must have a '{field}' field"
-                    ))
+                    self._add_error(ErrorCategory.SYNTAX, field,
+                        f"Workflow must have a '{field}' field")
 
-            # Validate version format
             if "version" in workflow:
                 version = workflow["version"]
                 if not isinstance(version, str):
-                    self.errors.append(ValidationError(
-                        field="version",
-                        message="Version must be a string"
-                    ))
+                    self._add_error(ErrorCategory.TYPE, "version",
+                        "Version must be a string")
                 elif not self._is_semantic_version(version):
-                    self.errors.append(ValidationError(
-                        field="version",
-                        message=f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'"
-                    ))
-    else:
-        # Check for deprecation warning
-        if "id" in workflow and "workflow_id" not in workflow:
-            self._add_deprecation_warning("workflow", "id", "workflow_id")
-
-        # Validate hierarchical ID format
-        if not self._is_hierarchical_id(workflow_id):
-            self.warnings.append(ValidationError(
-                field="workflow_id",
-                message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
-                severity="warning"
-            ))
-
-        # Validate hierarchical ID format
-        if not self._is_hierarchical_id(workflow_id):
-            self.warnings.append(ValidationError(
-                field="workflow_id",
-                message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
-                severity="warning"
-            ))
-
-        required_fields = ["name", "version", "nodes", "edges"]
-        for field in required_fields:
-            if field not in workflow:
-                self.errors.append(ValidationError(
-                    field=field,
-                    message=f"Workflow must have a '{field}' field"
-                ))
-
-        # Validate version format
-        if "version" in workflow:
-            version = workflow["version"]
-            if not isinstance(version, str):
-                self.errors.append(ValidationError(
-                    field="version",
-                    message="Version must be a string"
-                ))
-            elif not self._is_semantic_version(version):
-                self.errors.append(ValidationError(
-                    field="version",
-                    message=f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'"
-                ))
+                    self._add_error(ErrorCategory.TYPE, "version",
+                        f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'")
 
     def _validate_nodes(self, workflow: Dict[str, Any]) -> None:
         """Validate nodes field."""
@@ -191,7 +219,6 @@ class WorkflowValidator:
                 ))
                 continue
 
-            # Check for duplicate IDs
             if node_id in node_ids:
                 self.errors.append(ValidationError(
                     field=f"nodes.{node_id}",
@@ -199,7 +226,6 @@ class WorkflowValidator:
                 ))
             node_ids.add(node_id)
 
-            # Validate node structure
             if "type" not in node:
                 self.errors.append(ValidationError(
                     field=f"nodes.{node_id}",
@@ -219,7 +245,6 @@ class WorkflowValidator:
                     message=f"Node '{node_id}' must have a 'label' field"
                 ))
 
-            # Validate position if present
             if "position" in node:
                 position = node["position"]
                 if not isinstance(position, dict):
@@ -244,12 +269,23 @@ class WorkflowValidator:
         edges = workflow.get("edges")
 
         if not edges:
+            self.errors.append(ValidationError(
+                field="edges",
+                message="Workflow must have an 'edges' field"
+            ))
             return
 
         if not isinstance(edges, list):
             self.errors.append(ValidationError(
                 field="edges",
                 message="Edges must be an array"
+            ))
+            return
+
+        if len(edges) == 0:
+            self.errors.append(ValidationError(
+                field="edges",
+                message="Workflow must have at least one edge"
             ))
             return
 
@@ -262,7 +298,6 @@ class WorkflowValidator:
                 ))
                 continue
 
-# Support both old 'id' and new 'edge_id' field names
             edge_id = edge.get("edge_id") or edge.get("id")
             if edge_id:
                 if edge_id in edge_ids:
@@ -272,32 +307,15 @@ class WorkflowValidator:
                     ))
                 edge_ids.add(edge_id)
 
-                # Check for deprecation warning
                 if "id" in edge and "edge_id" not in edge:
                     self._add_deprecation_warning(f"edges[{i}]", "id", "edge_id")
 
-                # Validate hierarchical ID format
                 if not self._is_hierarchical_id(edge_id):
                     self.warnings.append(ValidationError(
                         field=f"edges[{i}].edge_id",
                         message=f"Edge ID '{edge_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
                         severity="warning"
                     ))
-
-            # Validate edge structure
-            if "source" not in edge:
-                self.errors.append(ValidationError(
-                    field=f"edges[{i}]",
-                    message="Edge must have a 'source' field"
-                ))
-                edge_ids.add(edge_id)
-
-            # Validate edge structure
-            if "id" not in edge:
-                self.errors.append(ValidationError(
-                    field=f"edges[{i}]",
-                    message="Edge must have an 'id' field"
-                ))
 
             if "source" not in edge:
                 self.errors.append(ValidationError(
@@ -311,7 +329,6 @@ class WorkflowValidator:
                     message="Edge must have a 'target' field"
                 ))
 
-            # Validate relation if present
             if "relation" in edge:
                 relation = edge["relation"]
                 if relation not in self.VALID_EDGE_RELATIONS:
@@ -321,46 +338,99 @@ class WorkflowValidator:
                     ))
 
     def _validate_cycles(self, workflow: Dict[str, Any]) -> None:
-        """Detect cycles using Kahn's algorithm."""
+        """Detect cycles using DFS and report detailed cycle paths."""
         nodes = workflow.get("nodes", {})
         edges = workflow.get("edges", [])
 
         if not nodes or not edges:
             return
 
-        # Build adjacency list and in-degree count
-        adjacency = defaultdict(list)
-        in_degree = {node_id: 0 for node_id in nodes}
-
+        # Build adjacency list from edges
+        adj = {node_id: [] for node_id in nodes}
         for edge in edges:
             source = edge.get("source")
             target = edge.get("target")
 
             if source and target and source in nodes and target in nodes:
-                adjacency[source].append(target)
-                in_degree[target] += 1
+                adj[source].append(target)
 
-        # Find all nodes with no incoming edges
-        queue = deque([node_id for node_id, degree in in_degree.items() if degree == 0])
-        result = []
+        # DFS with visited and recursion stack to detect cycles
+        visited = set()
+        rec_stack = set()
+        path = []
 
-        while queue:
-            current = queue.popleft()
-            result.append(current)
+        def dfs(node):
+            """DFS traversal to detect cycles."""
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
 
-            for neighbor in adjacency[current]:
-                in_degree[neighbor] -= 1
-                if in_degree[neighbor] == 0:
-                    queue.append(neighbor)
+            for neighbor in adj.get(node, []):
+                if neighbor not in visited:
+                    if dfs(neighbor):
+                        return True
+                elif neighbor in rec_stack:
+                    # Cycle found - extract the cycle path
+                    cycle_start = path.index(neighbor)
+                    cycle = path[cycle_start:] + [neighbor]
+                    self.errors.append(ValidationError(
+                        field="workflow",
+                        message=f"Cycle detected in workflow: {' -> '.join(cycle)}"
+                    ))
+                    return True
 
-        # If we didn't process all nodes, there's a cycle
-        if len(result) != len(nodes):
-            # Find nodes in the cycle
-            cycle_nodes = set(nodes.keys()) - set(result)
-            self.errors.append(ValidationError(
-                field="workflow",
-                message=f"Workflow contains a cycle involving nodes: {', '.join(sorted(cycle_nodes))}"
-            ))
+            rec_stack.remove(node)
+            path.pop()
+            return False
+
+        # Run DFS from each unvisited node
+        for node in nodes:
+            if node not in visited:
+                dfs(node)
+
+        # Also check for cycles in the reverse direction (edges might be bidirectional)
+        # Build reverse adjacency list
+        reverse_adj = defaultdict(list)
+        for edge in edges:
+            source = edge.get("source")
+            target = edge.get("target")
+
+            if source and target and source in nodes and target in nodes:
+                reverse_adj[target].append(source)
+
+        # Reset visited for reverse traversal
+        visited = set()
+        rec_stack = set()
+        path = []
+
+        def dfs_reverse(node):
+            """DFS traversal on reverse graph to detect cycles."""
+            visited.add(node)
+            rec_stack.add(node)
+            path.append(node)
+
+            for neighbor in reverse_adj.get(node, []):
+                if neighbor not in visited:
+                    if dfs_reverse(neighbor):
+                        return True
+                elif neighbor in rec_stack:
+                    # Cycle found in reverse direction
+                    cycle_start = path.index(neighbor)
+                    cycle = path[cycle_start:] + [neighbor]
+                    self.errors.append(ValidationError(
+                        field="workflow",
+                        message=f"Cycle detected in workflow (reverse): {' -> '.join(cycle)}"
+                    ))
+                    return True
+
+            rec_stack.remove(node)
+            path.pop()
+            return False
+
+        # Run DFS on reverse graph
+        for node in nodes:
+            if node not in visited:
+                dfs_reverse(node)
 
     def _validate_connections(self, workflow: Dict[str, Any]) -> None:
         """Validate edge connections."""
@@ -376,7 +446,6 @@ class WorkflowValidator:
             source = edge.get("source")
             target = edge.get("target")
 
-            # Check if source and target exist
             if source and source not in node_ids:
                 self.errors.append(ValidationError(
                     field=f"edges[{i}].source",
@@ -389,7 +458,6 @@ class WorkflowValidator:
                     message=f"Edge target '{target}' does not exist in nodes"
                 ))
 
-            # Validate trigger nodes (no incoming edges)
             if source and target:
                 source_node = nodes.get(source, {})
                 target_node = nodes.get(target, {})
@@ -397,21 +465,18 @@ class WorkflowValidator:
                 source_type = source_node.get("type")
                 target_type = target_node.get("type")
 
-                # Trigger nodes should not have incoming edges
                 if target_type == "trigger":
                     self.errors.append(ValidationError(
                         field=f"edges[{i}]",
                         message=f"Trigger node '{target}' cannot have incoming edges"
                     ))
 
-                # Output nodes should not have outgoing edges
                 if source_type == "output":
                     self.errors.append(ValidationError(
                         field=f"edges[{i}]",
                         message=f"Output node '{source}' cannot have outgoing edges"
                     ))
 
-                # Condition nodes should have at least 2 outgoing edges
                 if source_type == "condition":
                     outgoing_edges = [
                         e for e in edges
@@ -434,3 +499,31 @@ def validate_workflow(workflow: Dict[str, Any]) -> List[ValidationError]:
     """Validate workflow configuration."""
     validator = WorkflowValidator()
     return validator.validate(workflow)
+
+def _generate_cache_key(self, workflow: Dict[str, Any]) -> str:
+    import hashlib
+    import json
+
+    workflow_data = {
+        'workflow_id': workflow.get('workflow_id') or workflow.get('id'),
+        'name': workflow.get('name'),
+        'version': workflow.get('version'),
+        'node_count': len(workflow.get('nodes', {})),
+        'edge_count': len(workflow.get('edges', []))
+    }
+
+    workflow_str = json.dumps(workflow_data, sort_keys=True)
+    return hashlib.md5(workflow_str.encode()).hexdigest()
+    import hashlib
+    import json
+
+    workflow_data = {
+        'workflow_id': workflow.get('workflow_id') or workflow.get('id'),
+        'name': workflow.get('name'),
+        'version': workflow.get('version'),
+        'node_count': len(workflow.get('nodes', {})),
+        'edge_count': len(workflow.get('edges', []))
+    }
+
+    workflow_str = json.dumps(workflow_data, sort_keys=True)
+    return hashlib.md5(workflow_str.encode()).hexdigest()

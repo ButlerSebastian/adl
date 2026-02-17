@@ -95,9 +95,32 @@ class WorkflowValidator:
     MAX_CRITICAL_ERRORS = 10
 
     def __init__(self):
-        self.errors: List[ValidationError] = []
-        self.warnings: List[ValidationError] = []
-        self._cache: Dict[str, tuple[List[ValidationError], List[ValidationError]]] = {}
+        self._summary: ValidationErrorSummary = ValidationErrorSummary(
+            total_errors=0,
+            syntax_errors=[],
+            semantic_errors=[],
+            validation_errors=[],
+            type_errors=[]
+        )
+        self._cache: Dict[str, ValidationErrorSummary] = {}
+
+    def _add_error(self, category: ErrorCategory, field: str, message: str) -> None:
+        """Add an error to the validation summary."""
+        error = ValidationError(
+            field=field,
+            message=message,
+            category=category
+        )
+        self._summary.total_errors += 1
+
+        if category == ErrorCategory.SYNTAX:
+            self._summary.syntax_errors.append(error)
+        elif category == ErrorCategory.SEMANTIC:
+            self._summary.semantic_errors.append(error)
+        elif category == ErrorCategory.VALIDATION:
+            self._summary.validation_errors.append(error)
+        elif category == ErrorCategory.TYPE:
+            self._summary.type_errors.append(error)
 
     def _is_hierarchical_id(self, id_str: str) -> bool:
         """Check if ID follows hierarchical format (e.g., 'org.team.component')."""
@@ -105,26 +128,22 @@ class WorkflowValidator:
         pattern = r'^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$'
         return bool(re.match(pattern, id_str))
 
-    def _add_deprecation_warning(self, field: str, old_field: str, new_field: str) -> None:
-        """Add deprecation warning for old field name."""
-        self.warnings.append(ValidationError(
-            field=field,
-            message=f"Field '{old_field}' is deprecated. Use '{new_field}' instead.",
-            severity="warning"
-        ))
-
-    def validate(self, workflow: Dict[str, Any]) -> tuple[List[ValidationError], List[ValidationError]]:
-        """Validate workflow configuration. Returns (errors, warnings)."""
-        self.errors = []
+def validate(self, workflow: Dict[str, Any]) -> ValidationErrorSummary:
+        """Validate workflow configuration. Returns ValidationErrorSummary."""
+        self._summary = ValidationErrorSummary(
+            total_errors=0,
+            syntax_errors=[],
+            semantic_errors=[],
+            validation_errors=[],
+            type_errors=[]
+        )
 
         if not workflow:
-            return [], []
+            return self._summary
 
         cache_key = self._generate_cache_key(workflow)
         if cache_key in self._cache:
             return self._cache[cache_key]
-
-        critical_errors = 0
 
         self._validate_structure(workflow)
         self._validate_nodes(workflow)
@@ -132,57 +151,39 @@ class WorkflowValidator:
         self._validate_cycles(workflow)
         self._validate_connections(workflow)
 
-        if len(self.errors) >= self.MAX_CRITICAL_ERRORS:
-            self.errors.append(ValidationError(
-                field="workflow",
-                message=f"Validation terminated early: {self.MAX_CRITICAL_ERRORS} critical errors found",
-                severity="error"
-            ))
+        self._cache[cache_key] = self._summary
 
-        result = (self.errors, self.warnings)
-        self._cache[cache_key] = result
+        return self._summary
 
-        return result
-
-    def _validate_structure(self, workflow: Dict[str, Any]) -> None:
+def _validate_structure(self, workflow: Dict[str, Any]) -> None:
         """Validate workflow structure."""
         workflow_id = workflow.get("workflow_id") or workflow.get("id")
         if not workflow_id:
-            self.errors.append(ValidationError(
-                field="workflow_id",
-                message="Workflow must have a 'workflow_id' field (or 'id' for backward compatibility)"
-            ))
+            self._add_error(ErrorCategory.SEMANTIC, "workflow_id",
+                "Workflow must have a 'workflow_id' field (or 'id' for backward compatibility)")
         else:
             if "id" in workflow and "workflow_id" not in workflow:
-                self._add_deprecation_warning("workflow", "id", "workflow_id")
+                self._add_error(ErrorCategory.SEMANTIC, "workflow",
+                    "Field 'id' is deprecated. Use 'workflow_id' instead.")
 
             if not self._is_hierarchical_id(workflow_id):
-                self.warnings.append(ValidationError(
-                    field="workflow_id",
-                    message=f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.",
-                    severity="warning"
-                ))
+                self._add_error(ErrorCategory.SYNTAX, "workflow_id",
+                    f"Workflow ID '{workflow_id}' does not follow hierarchical format (e.g., 'org.team.component'). Consider using hierarchical IDs for better organization.")
 
             required_fields = ["name", "version", "nodes", "edges"]
             for field in required_fields:
                 if field not in workflow:
-                    self.errors.append(ValidationError(
-                        field=field,
-                        message=f"Workflow must have a '{field}' field"
-                    ))
+                    self._add_error(ErrorCategory.SYNTAX, field,
+                        f"Workflow must have a '{field}' field")
 
             if "version" in workflow:
                 version = workflow["version"]
                 if not isinstance(version, str):
-                    self.errors.append(ValidationError(
-                        field="version",
-                        message="Version must be a string"
-                    ))
+                    self._add_error(ErrorCategory.TYPE, "version",
+                        "Version must be a string")
                 elif not self._is_semantic_version(version):
-                    self.errors.append(ValidationError(
-                        field="version",
-                        message=f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'"
-                    ))
+                    self._add_error(ErrorCategory.TYPE, "version",
+                        f"Version must follow semantic versioning (e.g., '1.0.0'), got '{version}'")
 
     def _validate_nodes(self, workflow: Dict[str, Any]) -> None:
         """Validate nodes field."""

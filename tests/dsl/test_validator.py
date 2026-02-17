@@ -24,7 +24,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_duplicate_field_names_in_type(self, parser):
@@ -36,7 +36,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "DUPLICATE_FIELD"
         assert "name" in errors[0].message
@@ -50,7 +50,7 @@ agent TestAgent {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "DUPLICATE_FIELD"
         assert "id" in errors[0].message
@@ -65,7 +65,7 @@ enum Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "DUPLICATE_ENUM_VALUE"
         assert "value1" in errors[0].message
@@ -82,7 +82,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "DUPLICATE_TYPE"
         assert "Test" in errors[0].message
@@ -99,7 +99,7 @@ enum Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "DUPLICATE_ENUM"
         assert "Test" in errors[0].message
@@ -112,7 +112,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_TYPE_REFERENCE"
         assert "InvalidType" in errors[0].message
@@ -132,7 +132,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_valid_type_reference_to_defined_type(self, parser):
@@ -147,7 +147,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_valid_type_reference_to_defined_enum(self, parser):
@@ -163,7 +163,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_invalid_constraint_range_min_greater_than_max(self, parser):
@@ -174,7 +174,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_CONSTRAINT_RANGE"
         assert "100" in errors[0].message
@@ -188,7 +188,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_valid_constraint_range_max_only(self, parser):
@@ -199,7 +199,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_valid_constraint_range_min_and_max(self, parser):
@@ -210,7 +210,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_invalid_type_reference_in_array(self, parser):
@@ -221,7 +221,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_TYPE_REFERENCE"
         assert "InvalidType" in errors[0].message
@@ -234,7 +234,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_TYPE_REFERENCE"
         assert "InvalidType" in errors[0].message
@@ -247,7 +247,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_TYPE_REFERENCE"
         assert "InvalidType" in errors[0].message
@@ -260,7 +260,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].error_code == "INVALID_TYPE_REFERENCE"
         assert "InvalidType" in errors[0].message
@@ -275,7 +275,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 2
         error_codes = {e.error_code for e in errors}
         assert "DUPLICATE_FIELD" in error_codes
@@ -307,7 +307,7 @@ agent TestAgent {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 0
 
     def test_error_location_information(self, parser):
@@ -319,7 +319,7 @@ type Test {
 }
 """
         program = parser.parse(content)
-        errors = parser.validate(program)
+        errors = parser.validate(program).get_all_errors()
         assert len(errors) == 1
         assert errors[0].location.line is not None
         assert errors[0].location.column is not None

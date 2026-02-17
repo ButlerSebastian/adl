@@ -156,6 +156,10 @@ class PythonGenerator(ASTVisitor[str]):
             self.lines.append("")
 
         code = "\n".join(self.lines).strip()
+        print("DEBUG: Before validation")
+        print(f"DEBUG: Generated code:\n{repr(code)}\n")
+        print("DEBUG: Before validation")
+        print(f"DEBUG: Generated code:\n{repr(code)}\n")
 
         # Validate generated code
         is_valid, errors = self.validate_generated_code(code)
@@ -179,8 +183,8 @@ class PythonGenerator(ASTVisitor[str]):
             >>> generator.visit_EnumDef(node)
             'class Color(str):\\n    "red",\\n    "green",\\n    "blue",\\n'
         """
-        values = "\\\\n    ".join([f'"{value}",' for value in node.values])
-        return f"class {node.name}(str):\\\\n    {values}\\\\n"
+        values = "\\n    ".join([f'"{value}",' for value in node.values])
+        return f"class {node.name}(str):\\n    {values}\\n"
 
     def visit_TypeDef(self, node: TypeDef) -> str:
         """Generate Python TypedDict from a type definition.

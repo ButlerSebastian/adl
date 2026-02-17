@@ -128,11 +128,14 @@ array_suffix: LBRACKET RBRACKET
 optional_suffix: QMARK
 
 constraint_suffix: LPAREN range_constraint RPAREN
+                  | LPAREN pattern_constraint RPAREN
 
 range_constraint: NUMBER DOTDOT NUMBER?
-                | DOTDOT NUMBER
-                | NUMBER DOTDOT
-                | DOTDOT
+                 | DOTDOT NUMBER
+                 | NUMBER DOTDOT
+                 | DOTDOT
+
+pattern_constraint: STRING
 
 primary_type: PRIMITIVE_STRING
               | PRIMITIVE_INTEGER
@@ -150,6 +153,7 @@ primary_type: PRIMITIVE_STRING
 // ============================================
 
 agent_def: AGENT IDENTIFIER (STRING STRING)? LBRACE field_list RBRACE
+           | AGENT IDENTIFIER LBRACE field_list RBRACE
 
 // ============================================
 // DIRECTIVES

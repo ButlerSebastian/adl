@@ -85,6 +85,10 @@ Validation Errors: {self.total_errors}
 
         return sorted(error_counts.items(), key=lambda x: x[1], reverse=True)[:n]
 
+    def get_all_errors(self) -> List[ValidationError]:
+        """Get all validation errors combined."""
+        return self.syntax_errors + self.semantic_errors + self.validation_errors + self.type_errors
+
 
 class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
     """

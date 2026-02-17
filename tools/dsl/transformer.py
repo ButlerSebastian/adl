@@ -7,7 +7,7 @@ into typed AST nodes according to the grammar defined in grammar.lark.
 
 from lark import Transformer, Token, Tree, v_args
 from lark.tree import Meta
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union, Any, Tuple
 
 # Import all AST node types from ast module
 from .adl_ast import (
@@ -484,6 +484,14 @@ class ADLTransformer(Transformer):
                     max_value=max_val,
                     loc=self._get_loc(meta),
                 )
+            elif suffix.startswith('"') or suffix.startswith("'"):
+                # This is a pattern constraint string (e.g., "http://example.com")
+                pattern = suffix.strip('"\'')
+                return ConstrainedType(
+                    base_type=base_type,
+                    pattern=pattern,
+                    loc=self._get_loc(meta),
+                )
             else:
                 raise ValueError(f"Unknown suffix string: {suffix}")
         elif isinstance(suffix, (ArrayType, OptionalType, ConstrainedType)):
@@ -528,7 +536,7 @@ class ADLTransformer(Transformer):
         """
         return "?"
 
-    def constraint_suffix(self, children: List) -> str:
+    def constraint_suffix(self, children: List) -> Union[str, Tuple[str, Optional[str]]]:
         """
         Transform a constraint suffix.
 
@@ -536,10 +544,17 @@ class ADLTransformer(Transformer):
             children: List containing LPAREN, range_constraint, and RPAREN tokens
 
         Returns:
-            The range_constraint string (e.g., "1..100" or "1..")
+            The range_constraint string (e.g., "1..100" or "1..") or pattern_constraint string
         """
-        # Return the range_constraint (middle child)
-        return children[1] if len(children) > 1 else children[0]
+        # Return the constraint (middle child)
+        constraint = children[1] if len(children) > 1 else children[0]
+        
+        # If constraint is a Tree (pattern_constraint), extract the string value
+        if isinstance(constraint, Tree):
+            # pattern_constraint returns a STRING token
+            return constraint.children[0].value if constraint.children else ""
+        
+        return constraint
 
     def range_constraint(self, children: List) -> str:
         """
