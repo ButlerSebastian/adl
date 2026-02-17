@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 import re
+from datetime import datetime
 from .adl_ast import (
     Program, TypeDef, EnumDef, AgentDef, FieldDef,
     TypeReference, ConstrainedType, ArrayType, UnionType,
@@ -374,7 +375,79 @@ class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
                     error_code="INVALID_RANGE",
                     category=ErrorCategory.VALIDATION
                 ))
+
+        # Validate date/time format constraints for string types
+        if isinstance(node.base_type, PrimitiveType) and node.base_type.name == "string":
+            # Check if min_value is a valid date/time string
+            if node.min_value is not None:
+                if not self._validate_date_time(str(node.min_value), "min_value", node.loc):
+                    pass
+
+            # Check if max_value is a valid date/time string
+            if node.max_value is not None:
+                if not self._validate_date_time(str(node.max_value), "max_value", node.loc):
+                    pass
+
+            # Check if pattern is a valid date/time format
+            if node.pattern is not None:
+                if not self._validate_date_time_pattern(node.pattern, "pattern", node.loc):
+                    pass
+
         return self._create_error_summary()
+
+    def _validate_date_time(self, value: str, field_name: str, location: SourceLocation) -> bool:
+        """Validate that a string is a valid date/time format."""
+        date_formats = [
+            "%Y-%m-%d",
+            "%Y/%m/%d",
+            "%m/%d/%Y",
+            "%d/%m/%Y",
+            "%Y%m%d",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%Y/%m/%d %H:%M:%S",
+            "%H:%M:%S",
+            "%H:%M",
+        ]
+
+        for fmt in date_formats:
+            try:
+                datetime.strptime(value, fmt)
+                return True
+            except ValueError:
+                continue
+
+        self.errors.append(ValidationError(
+            message=f"Invalid {field_name} for date/time constraint: '{value}'. Must be a valid date/time format (YYYY-MM-DD, YYYY/MM/DD, YYYY-MM-DD HH:MM:SS, etc.)",
+            location=location,
+            error_code="INVALID_DATE_TIME_FORMAT",
+            category=ErrorCategory.VALIDATION
+        ))
+        return False
+
+    def _validate_date_time_pattern(self, pattern: str, field_name: str, location: SourceLocation) -> bool:
+        """Validate that a pattern string is a valid date/time format pattern."""
+        valid_specifiers = {
+            "%Y", "%y", "%m", "%d", "%H", "%I", "%M", "%S", "%f",
+            "%a", "%A", "%b", "%B", "%p", "%z", "%Z"
+        }
+
+        for specifier in pattern:
+            if specifier in valid_specifiers:
+                continue
+            if specifier == "\\":
+                continue
+
+        if not pattern or not any(spec in pattern for spec in valid_specifiers):
+            self.errors.append(ValidationError(
+                message=f"Invalid {field_name} for date/time pattern: '{pattern}'. Must contain valid date/time format specifiers (e.g., %Y-%m-%d, %H:%M:%S)",
+                location=location,
+                error_code="INVALID_DATE_TIME_PATTERN",
+                category=ErrorCategory.VALIDATION
+            ))
+            return False
+
+        return True
 
     def visit_EnforcementDef(self, node: EnforcementDef) -> ValidationErrorSummary:
         """Validate enforcement definition."""
