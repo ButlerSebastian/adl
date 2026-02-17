@@ -192,21 +192,22 @@ class TypeScriptGenerator(ASTVisitor[str]):
 
     def visit_EnumDef(self, node: EnumDef) -> str:
         """Generate TypeScript enum from an enum definition."""
-        values = "\n".join([f"  {value}," for value in node.values])
-        return f"export enum {node.name} {{\n{values}\n}}"
+        values = "\\n".join([f"  {value}," for value in node.values])
+        return f"export enum {node.name} {{\\n{values}\\n}}\\n"
 
     def visit_TypeDef(self, node: TypeDef) -> str:
         """Generate TypeScript interface from a type definition."""
         if not node.body:
-            return f"export interface {node.name} {{}}"
+            return f"export interface {node.name} {{}}\\n"
+
         fields = []
         for field in node.body.fields:
             field_type = field.type.accept(self)
             optional = "?" if field.optional else ""
             fields.append(f"  {field.name}{optional}: {field_type};")
 
-        fields_str = "\n".join(fields)
-        return f"export interface {node.name} {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"export interface {node.name} {{\\n{fields_str}\\n}}"
 
     def visit_AgentDef(self, node: AgentDef) -> str:
         """Generate TypeScript type from an agent definition."""
@@ -216,8 +217,8 @@ class TypeScriptGenerator(ASTVisitor[str]):
             optional = "?" if field.optional else ""
             fields.append(f"  {field.name}{optional}: {field_type};")
 
-        fields_str = "\n".join(fields)
-        return f"export type {node.name} = {{\n{fields_str}\n}};"
+        fields_str = "\\n".join(fields)
+        return f"export type {node.name} = {{\\n{fields_str}\\n}};\\n"
 
     def visit_PrimitiveType(self, node: PrimitiveType) -> str:
         """Generate TypeScript type for a primitive type."""
@@ -290,61 +291,61 @@ class TypeScriptGenerator(ASTVisitor[str]):
 
         # Generate workflow interface
         fields = [
-            f"  /**\n   * Unique identifier for this workflow.\n   * Recommended format: 'namespace/workflow-name'\n   * Example: 'marketing/campaign-creator'\n   */",
+            f"  /**\\n   * Unique identifier for this workflow.\\n   * Recommended format: 'namespace/workflow-name'\\n   * Example: 'marketing/campaign-creator'\\n   */",
             f"  workflow_id: string;",
-            f"  /**\n   * Human-readable name of the workflow.\n   */",
+            f"  /**\\n   * Human-readable name of the workflow.\\n   */",
             f"  name: string;",
-            f"  /**\n   * Version number of this workflow definition.\n   */",
+            f"  /**\\n   * Version number of this workflow definition.\\n   */",
             f"  version: string;",
-            f"  /**\n   * Detailed description of the workflow's purpose and behavior.\n   */",
+            f"  /**\\n   * Detailed description of the workflow's purpose and behavior.\\n   */",
             f"  description: string;",
-            f"  /**\n   * Map of node identifiers to node configurations.\n   * Note: Node keys serve as unique identifiers.\n   */",
+            f"  /**\\n   * Map of node identifiers to node configurations.\\n   * Note: Node keys serve as unique identifiers.\\n   */",
             f"  nodes: Record<string, WorkflowNode>;",
-            f"  /**\n   * List of edges connecting nodes in the workflow.\n   */",
+            f"  /**\\n   * List of edges connecting nodes in the workflow.\\n   */",
             f"  edges: WorkflowEdge[];",
-            f"  /**\n   * Optional metadata for this workflow.\n   */",
+            f"  /**\\n   * Optional metadata for this workflow.\\n   */",
             f"  metadata?: Record<string, any>;",
-            f"  /**\n   * @deprecated Use workflow_id instead.\n   */",
+            f"  /**\\n   * @deprecated Use workflow_id instead.\\n   */",
             f"  id?: string;"
         ]
-        fields_str = "\n".join(fields)
-        return f"{node_interface}\n\n{edge_interface}\n\nexport interface Workflow {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"{node_interface}\\n\\n{edge_interface}\\n\\nexport interface Workflow {{\\n{fields_str}\\n}}\\n"
 
     def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> str:
         """Generate TypeScript interface for workflow node."""
         fields = [
-            f"  /**\n   * Type of this node (e.g., 'input', 'process', 'output').\n   */",
+            f"  /**\\n   * Type of this node (e.g., 'input', 'process', 'output').\\n   */",
             f"  type: string;",
-            f"  /**\n   * Human-readable label for this node.\n   */",
+            f"  /**\\n   * Human-readable label for this node.\\n   */",
             f"  label: string;",
-            f"  /**\n   * Configuration for this node.\n   */",
+            f"  /**\\n   * Configuration for this node.\\n   */",
             f"  config: Record<string, any>;",
-            f"  /**\n   * Position of this node in the workflow canvas.\n   */",
+            f"  /**\\n   * Position of this node in the workflow canvas.\\n   */",
             f"  position: {{ x: number; y: number }};"
         ]
-        fields_str = "\n".join(fields)
-        return f"export interface WorkflowNode {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"export interface WorkflowNode {{\\n{fields_str}\\n}}\\n"
 
     def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> str:
         """Generate TypeScript interface for workflow edge."""
         fields = [
-            f"  /**\n   * Unique identifier for this edge.\n   * Recommended format: 'source-node-target-node'\n   * Example: 'input-node-process-node'\n   */",
+            f"  /**\\n   * Unique identifier for this edge.\\n   * Recommended format: 'source-node-target-node'\\n   * Example: 'input-node-process-node'\\n   */",
             f"  edge_id: string;",
-            f"  /**\n   * Source node identifier.\n   */",
+            f"  /**\\n   * Source node identifier.\\n   */",
             f"  source: string;",
-            f"  /**\n   * Target node identifier.\n   */",
+            f"  /**\\n   * Target node identifier.\\n   */",
             f"  target: string;",
-            f"  /**\n   * Relationship type between source and target nodes.\n   */",
+            f"  /**\\n   * Relationship type between source and target nodes.\\n   */",
             f"  relation: string;",
-            f"  /**\n   * Optional condition for edge execution.\n   */",
+            f"  /**\\n   * Optional condition for edge execution.\\n   */",
             f"  condition?: Record<string, any>;",
-            f"  /**\n   * Optional metadata for this edge.\n   */",
+            f"  /**\\n   * Optional metadata for this edge.\\n   */",
             f"  metadata?: Record<string, any>;",
-            f"  /**\n   * @deprecated Use edge_id instead.\n   */",
+            f"  /**\\n   * @deprecated Use edge_id instead.\\n   */",
             f"  id?: string;"
         ]
-        fields_str = "\n".join(fields)
-        return f"export interface WorkflowEdge {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"export interface WorkflowEdge {{\\n{fields_str}\\n}}\\n"
 
     def visit_PolicyDef(self, node: PolicyDef) -> str:
         """Generate TypeScript interface for policy definition."""
@@ -353,27 +354,27 @@ class TypeScriptGenerator(ASTVisitor[str]):
 
         # Generate policy interface
         fields = [
-            f"  /**\n   * Unique identifier for this policy.\n   * Recommended format: 'namespace/policy-name'\n   * Example: 'security/data-access-policy'\n   */",
+            f"  /**\\n   * Unique identifier for this policy.\\n   * Recommended format: 'namespace/policy-name'\\n   * Example: 'security/data-access-policy'\\n   */",
             f"  policy_id: string;",
-            f"  /**\n   * Human-readable name of the policy.\n   */",
+            f"  /**\\n   * Human-readable name of the policy.\\n   */",
             f"  name: string;",
-            f"  /**\n   * Version number of this policy definition.\n   */",
+            f"  /**\\n   * Version number of this policy definition.\\n   */",
             f"  version: string;",
-            f"  /**\n   * Detailed description of the policy's purpose and behavior.\n   */",
+            f"  /**\\n   * Detailed description of the policy's purpose and behavior.\\n   */",
             f"  description: string;",
-            f"  /**\n   * Rego policy rules.\n   */",
+            f"  /**\\n   * Rego policy rules.\\n   */",
             f"  rego: string;",
-            f"  /**\n   * Enforcement settings for this policy.\n   */",
+            f"  /**\\n   * Enforcement settings for this policy.\\n   */",
             f"  enforcement: Enforcement;",
-            f"  /**\n   * Additional data for this policy.\n   */",
+            f"  /**\\n   * Additional data for this policy.\\n   */",
             f"  data: Record<string, any>;",
-            f"  /**\n   * Optional metadata for this policy.\n   */",
+            f"  /**\\n   * Optional metadata for this policy.\\n   */",
             f"  metadata?: Record<string, any>;",
-            f"  /**\n   * @deprecated Use policy_id instead.\n   */",
+            f"  /**\\n   * @deprecated Use policy_id instead.\\n   */",
             f"  id?: string;"
         ]
-        fields_str = "\n".join(fields)
-        return f"{enforcement_interface}\n\nexport interface Policy {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"{enforcement_interface}\\n\\nexport interface Policy {{\\n{fields_str}\\n}}\\n"
 
     def visit_EnforcementDef(self, node: EnforcementDef) -> str:
         """Generate TypeScript interface for enforcement settings."""
@@ -382,5 +383,5 @@ class TypeScriptGenerator(ASTVisitor[str]):
             f"  action: 'deny' | 'warn' | 'log' | 'allow';",
             f"  audit_log: boolean;"
         ]
-        fields_str = "\n".join(fields)
-        return f"export interface Enforcement {{\n{fields_str}\n}}"
+        fields_str = "\\n".join(fields)
+        return f"export interface Enforcement {{\\n{fields_str}\\n}}\\n"

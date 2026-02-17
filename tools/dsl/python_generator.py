@@ -136,7 +136,6 @@ class PythonGenerator(ASTVisitor[str]):
         self.lines.append("from typing import List, Optional, Union, TypedDict, Any")
         self.lines.append("")
 
-        # Process all declarations
         for decl in program.declarations:
             if isinstance(decl, EnumDef):
                 self.lines.append(decl.accept(self))
@@ -168,22 +167,22 @@ class PythonGenerator(ASTVisitor[str]):
 
     def visit_EnumDef(self, node: EnumDef) -> str:
         """Generate Python enum from an enum definition."""
-        values = "\n    ".join([f'"{value}",' for value in node.values])
-        return f"class {node.name}(str):\n    {values}"
+        values = "\\n    ".join([f'"{value}",' for value in node.values])
+        return f"class {node.name}(str):\\n    {values}\\n"
 
     def visit_TypeDef(self, node: TypeDef) -> str:
         """Generate Python TypedDict from a type definition."""
         if not node.body:
-            return f"class {node.name}(TypedDict):"
-        
+            return f"class {node.name}(TypedDict):\\n"
+
         fields = []
         for field in node.body.fields:
             field_type = field.type.accept(self)
             optional = "NotRequired" if field.optional else "Required"
             fields.append(f'    {field.name}: {optional}[{field_type}]')
 
-        fields_str = "\n".join(fields)
-        return f"class {node.name}(TypedDict):\n{fields_str}"
+        fields_str = "\\n".join(fields)
+        return f"class {node.name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_AgentDef(self, node: AgentDef) -> str:
         """Generate Python TypedDict from an agent definition.
@@ -212,8 +211,8 @@ class PythonGenerator(ASTVisitor[str]):
             '    owner: Required[str]',
             '    metadata: Required[Dict[str, Any]]'
         ]
-        fields_str = "\n".join(fields)
-        return f"class {node.name}(TypedDict):\n{fields_str}"
+        fields_str = "\\n".join(fields)
+        return f"class {node.name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_WorkflowDef(self, node: WorkflowDef) -> str:
         """Generate Python TypedDict for a workflow definition.
@@ -233,10 +232,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    edges: Required[List[WorkflowEdgeDef]]',
             '    metadata: Required[Dict[str, Any]]'
         ]
-        fields_str = "\n".join(fields)
+        fields_str = "\\n".join(fields)
         # Sanitize class name to be valid Python identifier
         class_name = node.name.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\n{fields_str}"
+        return f"class {class_name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_WorkflowNodeDef(self, node: WorkflowNodeDef) -> str:
         """Generate Python TypedDict for a workflow node definition.
@@ -253,10 +252,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    position: Required[Dict[str, int]]',
             '    id: NotRequired[str]'  # DEPRECATED: Use node key instead
         ]
-        fields_str = "\n".join(fields)
+        fields_str = "\\n".join(fields)
         # Use id as class name (nodes don't have a name field)
         class_name = node.id.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\n{fields_str}"
+        return f"class {class_name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_WorkflowEdgeDef(self, node: WorkflowEdgeDef) -> str:
         """Generate Python TypedDict for a workflow edge definition.
@@ -275,10 +274,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    condition: NotRequired[Dict[str, Any]]',
             '    metadata: NotRequired[Dict[str, Any]]'
         ]
-        fields_str = "\n".join(fields)
+        fields_str = "\\n".join(fields)
         # Use id as class name (edges don't have a name field)
         class_name = node.id.replace(" ", "_").replace("-", "_")
-        return f"class {class_name}(TypedDict):\n{fields_str}"
+        return f"class {class_name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_PolicyDef(self, node: PolicyDef) -> str:
         """Generate Python TypedDict for a policy definition.
@@ -299,8 +298,8 @@ class PythonGenerator(ASTVisitor[str]):
             '    data: Required[Dict[str, Any]]',
             '    metadata: Required[Dict[str, Any]]'
         ]
-        fields_str = "\n".join(fields)
-        return f"class {node.name}(TypedDict):\n{fields_str}"
+        fields_str = "\\n".join(fields)
+        return f"class {node.name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_EnforcementDef(self, node: EnforcementDef) -> str:
         """Generate Python TypedDict for an enforcement definition."""
@@ -309,10 +308,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    action: Required[str]',
             '    audit_log: Required[bool]'
         ]
-        fields_str = "\n".join(fields)
+        fields_str = "\\n".join(fields)
         # Use enforcement as class name
         class_name = "Enforcement"
-        return f"class {class_name}(TypedDict):\n{fields_str}"
+        return f"class {class_name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_PolicyDataDef(self, node: PolicyDataDef) -> str:
         """Generate Python TypedDict for a policy data definition."""
@@ -320,10 +319,10 @@ class PythonGenerator(ASTVisitor[str]):
             '    roles: Required[Dict[str, List[str]]]',
             '    permissions: Required[Dict[str, Any]]'
         ]
-        fields_str = "\n".join(fields)
+        fields_str = "\\n".join(fields)
         # Use policy_data as class name
         class_name = "PolicyData"
-        return f"class {class_name}(TypedDict):\n{fields_str}"
+        return f"class {class_name}(TypedDict):\\n{fields_str}\\n"
 
     def visit_PrimitiveType(self, node: PrimitiveType) -> str:
         """Generate Python type for a primitive type."""
