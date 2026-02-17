@@ -191,14 +191,38 @@ class TypeScriptGenerator(ASTVisitor[str]):
         return code
 
     def visit_EnumDef(self, node: EnumDef) -> str:
-        """Generate TypeScript enum from an enum definition."""
-        values = "\\n".join([f"  {value}," for value in node.values])
-        return f"export enum {node.name} {{\\n{values}\\n}}\\n"
+        """Generate TypeScript enum from an enum definition.
+
+        Args:
+            node: The enum definition node to generate code for
+
+        Returns:
+            TypeScript code defining the enum
+
+        Example:
+            >>> node = EnumDef("Color", ["red", "green", "blue"])
+            >>> generator.visit_EnumDef(node)
+            'export enum Color {\\n  red,\\n  green,\\n  blue,\\n}\\n'
+        """
+        values = "\\\\n".join([f"  {value}," for value in node.values])
+        return f"export enum {node.name} {{\\\\n{values}\\\\n}}\\\\n"
 
     def visit_TypeDef(self, node: TypeDef) -> str:
-        """Generate TypeScript interface from a type definition."""
+        """Generate TypeScript interface from a type definition.
+
+        Args:
+            node: The type definition node to generate code for
+
+        Returns:
+            TypeScript code defining the interface
+
+        Example:
+            >>> node = TypeDef("User", [FieldDef("name", TypeReference("string"), False)])
+            >>> generator.visit_TypeDef(node)
+            'export interface User {\\n  name: string;\\n}'
+        """
         if not node.body:
-            return f"export interface {node.name} {{}}\\n"
+            return f"export interface {node.name} {{}}\\\\n"
 
         fields = []
         for field in node.body.fields:
@@ -206,22 +230,46 @@ class TypeScriptGenerator(ASTVisitor[str]):
             optional = "?" if field.optional else ""
             fields.append(f"  {field.name}{optional}: {field_type};")
 
-        fields_str = "\\n".join(fields)
-        return f"export interface {node.name} {{\\n{fields_str}\\n}}"
+        fields_str = "\\\\n".join(fields)
+        return f"export interface {node.name} {{\\\\n{fields_str}\\\\n}}"
 
     def visit_AgentDef(self, node: AgentDef) -> str:
-        """Generate TypeScript type from an agent definition."""
+        """Generate TypeScript type from an agent definition.
+
+        Args:
+            node: The agent definition node to generate code for
+
+        Returns:
+            TypeScript code defining the agent type
+
+        Example:
+            >>> node = AgentDef("MyAgent", [FieldDef("agent_id", TypeReference("string"), False)])
+            >>> generator.visit_AgentDef(node)
+            'export type MyAgent = {\\n  agent_id: string;\\n};\\n'
+        """
         fields = []
         for field in node.fields:
             field_type = field.type.accept(self)
             optional = "?" if field.optional else ""
             fields.append(f"  {field.name}{optional}: {field_type};")
 
-        fields_str = "\\n".join(fields)
-        return f"export type {node.name} = {{\\n{fields_str}\\n}};\\n"
+        fields_str = "\\\\n".join(fields)
+        return f"export type {node.name} = {{\\\\n{fields_str}\\\\n}};\\\\n"
 
     def visit_PrimitiveType(self, node: PrimitiveType) -> str:
-        """Generate TypeScript type for a primitive type."""
+        """Generate TypeScript type for a primitive type.
+
+        Args:
+            node: The primitive type node to generate code for
+
+        Returns:
+            TypeScript type string for the primitive type
+
+        Example:
+            >>> node = PrimitiveType("string")
+            >>> generator.visit_PrimitiveType(node)
+            'string'
+        """
         type_mapping = {
             "string": "string",
             "integer": "number",
@@ -235,51 +283,157 @@ class TypeScriptGenerator(ASTVisitor[str]):
         return type_mapping.get(node.name, "string")
 
     def visit_TypeReference(self, node: TypeReference) -> str:
-        """Generate TypeScript type for a type reference."""
+        """Generate TypeScript type for a type reference.
+
+        Args:
+            node: The type reference node to generate code for
+
+        Returns:
+            TypeScript type string for the type reference
+
+        Example:
+            >>> node = TypeReference("User")
+            >>> generator.visit_TypeReference(node)
+            'User'
+        """
         return node.name
 
     def visit_ArrayType(self, node: ArrayType) -> str:
-        """Generate TypeScript type for an array type."""
+        """Generate TypeScript type for an array type.
+
+        Args:
+            node: The array type node to generate code for
+
+        Returns:
+            TypeScript type string for the array type
+
+        Example:
+            >>> node = ArrayType(PrimitiveType("string"))
+            >>> generator.visit_ArrayType(node)
+            'string[]'
+        """
         element_type = node.element_type.accept(self)
         return f"{element_type}[]"
 
     def visit_UnionType(self, node: UnionType) -> str:
-        """Generate TypeScript type for a union type."""
+        """Generate TypeScript type for a union type.
+
+        Args:
+            node: The union type node to generate code for
+
+        Returns:
+            TypeScript type string for the union type
+
+        Example:
+            >>> node = UnionType([PrimitiveType("string"), PrimitiveType("number")])
+            >>> generator.visit_UnionType(node)
+            'string | number'
+        """
         types = " | ".join([union_type.accept(self) for union_type in node.types])
         return types
 
     def visit_OptionalType(self, node: OptionalType) -> str:
-        """Generate TypeScript type for an optional type."""
+        """Generate TypeScript type for an optional type.
+
+        Args:
+            node: The optional type node to generate code for
+
+        Returns:
+            TypeScript type string for the optional type
+
+        Example:
+            >>> node = OptionalType(PrimitiveType("string"))
+            >>> generator.visit_OptionalType(node)
+            'string | null'
+        """
         inner_type = node.inner_type.accept(self)
         return f"{inner_type} | null"
 
     def visit_ConstrainedType(self, node: ConstrainedType) -> str:
-        """Generate TypeScript type for a constrained type."""
+        """Generate TypeScript type for a constrained type.
+
+        Args:
+            node: The constrained type node to generate code for
+
+        Returns:
+            TypeScript type string for the constrained type
+
+        Example:
+            >>> node = ConstrainedType(PrimitiveType("string"))
+            >>> generator.visit_ConstrainedType(node)
+            'string'
+        """
         base_type = node.base_type.accept(self)
         return base_type
 
     def visit_default(self, node) -> str:
-        """Default visitor for unhandled node types."""
+        """Default visitor for unhandled node types.
+
+        Args:
+            node: The unhandled node type
+
+        Returns:
+            TypeScript type string for unhandled types
+
+        Example:
+            >>> generator.visit_default(AnyNode())
+            'any'
+        """
         return "any"
 
     def visit_Program(self, node: Program) -> str:
-        """Visit program node."""
+        """Visit program node.
+
+        Args:
+            node: The program node to visit
+
+        Returns:
+            Empty string (program is handled in generate method)
+        """
         return ""
 
     def visit_ImportStmt(self, node) -> str:
-        """Visit import statement node."""
+        """Visit import statement node.
+
+        Args:
+            node: The import statement node to visit
+
+        Returns:
+            Empty string (imports are handled in generate method)
+        """
         return ""
 
     def visit_FieldDef(self, node: FieldDef) -> str:
-        """Visit field definition node."""
+        """Visit field definition node.
+
+        Args:
+            node: The field definition node to visit
+
+        Returns:
+            Empty string (field definitions are handled in visit_TypeDef)
+        """
         return ""
 
     def visit_TypeBody(self, node) -> str:
-        """Visit type body node."""
+        """Visit type body node.
+
+        Args:
+            node: The type body node to visit
+
+        Returns:
+            Empty string (type bodies are handled in visit_TypeDef)
+        """
         return ""
 
     def visit_FieldList(self, node) -> str:
-        """Visit field list node."""
+        """Visit field list node.
+
+        Args:
+            node: The field list node to visit
+
+        Returns:
+            Empty string (field lists are handled in visit_TypeDef)
+        """
         return ""
 
     # Phase 4: Workflow and Policy visitor methods
