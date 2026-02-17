@@ -376,22 +376,17 @@ class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
                     category=ErrorCategory.VALIDATION
                 ))
 
-        # Validate date/time format constraints for string types
-        if isinstance(node.base_type, PrimitiveType) and node.base_type.name == "string":
-            # Check if min_value is a valid date/time string
-            if node.min_value is not None:
-                if not self._validate_date_time(str(node.min_value), "min_value", node.loc):
-                    pass
-
-            # Check if max_value is a valid date/time string
-            if node.max_value is not None:
-                if not self._validate_date_time(str(node.max_value), "max_value", node.loc):
-                    pass
-
-            # Check if pattern is a valid date/time format
-            if node.pattern is not None:
-                if not self._validate_date_time_pattern(node.pattern, "pattern", node.loc):
-                    pass
+        # Validate pattern field is a valid regex
+        if node.pattern is not None:
+            try:
+                re.compile(node.pattern)
+            except re.error as e:
+                self.errors.append(ValidationError(
+                    message=f"Invalid regex pattern: '{node.pattern}'. {str(e)}",
+                    location=node.loc,
+                    error_code="INVALID_REGEX_PATTERN",
+                    category=ErrorCategory.VALIDATION
+                ))
 
         return self._create_error_summary()
 
@@ -440,7 +435,7 @@ class SemanticValidator(ASTVisitor[ValidationErrorSummary]):
 
         if not pattern or not any(spec in pattern for spec in valid_specifiers):
             self.errors.append(ValidationError(
-                message=f"Invalid {field_name} for date/time pattern: '{pattern}'. Must contain valid date/time format specifiers (e.g., %Y-%m-%d, %H:%M:%S)",
+                message=f"Invalid {field_name} for date/time pattern: \'{pattern}\'. Must contain valid date/time format specifiers (e.g., %Y-%m-%d, %H:%M:%S)",
                 location=location,
                 error_code="INVALID_DATE_TIME_PATTERN",
                 category=ErrorCategory.VALIDATION
